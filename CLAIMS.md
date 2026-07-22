@@ -32,9 +32,18 @@ Strength scale (Strong → Speculative), AI-OS-style:
 
 Related (not a separate C-id): day generation mix pie on `/` sums CAISO fuel-mix MW as MWh (**Strong** as sourced generation-by-fuel). CEC data-center **peak demand share** (~1,000 MW / ~2% of CAISO peak, early 2026) is **Confirmed** in `BENCHMARKS.md` and `provenance.ts` (`PROVENANCE.dataCenters`). That figure is peak share of system peak, **not** annual end-use energy share. End-use / generation-mix pie slices (homes, data centers, industry) remain **out of scope** on the fuel-mix donut (would misrepresent CAISO generation-by-fuel).
 
+Related (not a C-id; **not** a C6/C7/C8 upgrade): **CEC 2025 IEPR demand forecast** (adopted Jan 21, 2026) finds EV charging, not AI data centers, to be the largest driver of CAISO **peak demand growth** through 2045, including after an upward revision to the data-center component shortly before adoption. High-scenario peak rise labeled **Up to 61%** in the site StatBubbles. Strength: **Moderate-Strong (forecast citation)**. Cite as the CEC's finding via `PROVENANCE.ieprDemandForecast`; national EIA AEO2026 data-center growth contrast via `PROVENANCE.eiaAeo2026`; Bloom Energy CA share note is Methods-only (`PROVENANCE.bloomEnergyDcReport`). Do not present these as this project's model output.
+
 ---
 
 ## Live UI map by route
+
+### Site chrome (`Layout.tsx`, every route)
+
+| UI element | Claim | Label shown |
+|------------|--------|-------------|
+| Site intro paragraph | CEC IEPR EV-vs-DC peak-driver framing | Moderate-Strong forecast citation (CEC, not this app) |
+| StatBubbles (5) | CAISO 2024 peak; AFDC plug-ins; IEPR high-scenario peak rise; CEC DC ~2%; CEC LDV ~29.7M | Confirmed / forecast citation per `BENCHMARKS.md` |
 
 ### `/` Adoption (home)
 
@@ -83,5 +92,7 @@ Related (not a separate C-id): day generation mix pie on `/` sums CAISO fuel-mix
 ## Upgrade rules
 
 - Do not promote C6/C7/C8 without new evidence (real DR program data, interconnection study, or verified BESS sizing method).
+- Citing the CEC IEPR EV-vs-DC peak-driver finding does **not** upgrade C6/C7/C8; keep stress-test and BESS labels unchanged.
 - Do not add data-center or other end-use slices to the CAISO **generation-mix** pie: fuel mix is generation by fuel. A separate, correctly labeled peak-share callout may use `PROVENANCE.dataCenters` (Confirmed); do not treat that peak share as annual energy or as a fuel-mix slice.
 - Do not cite GridLab/Brattle (~4,500 / ~1,600 MW) as confirmed.
+- Do not put Bloom Energy figures in StatBubbles until a primary URL is verified in `BENCHMARKS.md`.

@@ -9,7 +9,7 @@ export const PGE_EV_RATES =
 
 export const PROVENANCE = {
   /** When this build last re-checked primary sources */
-  verifiedAsOf: "2026-07-20",
+  verifiedAsOf: "2026-07-22",
   grid: {
     source: "CAISO via gridstatus (CA ISO-TAC load + fuel mix)",
     days: [
@@ -20,6 +20,9 @@ export const PROVENANCE = {
       "2025-08-21",
       "2026-07-15",
     ],
+    /** CAISO Peak Load History PDF; site header StatBubble */
+    peak2024Mw: 48_323,
+    peak2024Label: "2024 (Sept 5, 16:59)",
   },
   evShape: {
     source: "CEC 2022 IEPR PEV Load Shapes (LD, 5 utility regions)",
@@ -76,6 +79,48 @@ export const PROVENANCE = {
     forecast2040PeakMwApprox: 4_500,
     forecast2040PeakShareOfCaisoApprox: 0.09,
     forecast2040Label: "CEC Planning Forecast ~2040",
+  },
+  /**
+   * CEC 2025 IEPR / CED 2025 demand forecast (adopted Jan 21, 2026).
+   * Site framing: EV charging vs data centers as peak-demand growth drivers.
+   * This is the CEC's forecast, not a model output from this project.
+   */
+  ieprDemandForecast: {
+    name: "CEC 2025 IEPR Demand Forecast (CED 2025)",
+    adopted: "2026-01-21",
+    url: "https://www.energy.ca.gov/data-reports/california-energy-planning-library/forecasts-and-system-planning/demand-side-3",
+    peakDriverFinding:
+      "EV charging (transportation electrification), not AI data centers, is the largest projected driver of CAISO peak demand growth through 2045",
+    highScenarioPeakRiseLabel: "Up to 61%",
+    highScenarioPeakRiseNote:
+      "High scenario: CAISO peak demand rise by ~2045, mostly from EVs (as reported for the adopted forecast; re-check vs CED 2025 Peak Forecast tables for primary)",
+    dataCenterUpwardRevisionNote:
+      "Data-center component of the same CEC forecast was revised upward shortly before adoption (CEC DAWG update listed on the demand-side page, Jan 5, 2026). The EV-larger-than-data-centers finding already reflects that higher data-center estimate.",
+    dawgUpdateLabel:
+      "Updated Results for Data Centers, Known Loads, Annual Forecast, Peak Forecast, and Forecast Use Cases (January 5, 2026 DAWG Presentation)",
+    retrievedAsOf: "2026-07-22",
+    strengthLabel: "Moderate-Strong (forecast citation)",
+  },
+  /**
+   * National contrast only: EIA AEO2026 names data centers as the dominant
+   * long-term U.S. electricity growth driver. Not a California peak claim.
+   */
+  eiaAeo2026: {
+    name: "EIA Annual Energy Outlook 2026",
+    published: "2026-04",
+    url: "https://www.eia.gov/outlooks/aeo/",
+    pressUrl: "https://www.eia.gov/pressroom/releases/press587.php",
+    nationalFinding:
+      "Data center load is emerging as the dominant driver of long-term U.S. electricity growth",
+    retrievedAsOf: "2026-07-22",
+  },
+  /**
+   * Methods-only contrast. No approved primary URL in-repo; do not put in StatBubbles.
+   */
+  bloomEnergyDcReport: {
+    name: "Bloom Energy 2026 Data Center Power Report (Jan 2026)",
+    note: "Industry contrast only: California's relative national data-center market share is described as projected to decline as developers favor Texas/Southeast for power availability and faster interconnection. Not independently verified against a primary PDF in this repo; Methods citation only.",
+    status: "Methods-only" as const,
   },
   /**
    * CARB Advanced Clean Cars II: manufacturer new-sales ZEV shares.

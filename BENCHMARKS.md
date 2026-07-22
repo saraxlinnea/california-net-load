@@ -25,6 +25,19 @@ Peak demand share of CAISO system peak. **Not** annual end-use energy share; do 
 
 Forecast only (not current): CEC Planning Forecast projects ~4,500 MW / ~9% of peak by 2040 (same Data Centers page). Do not present as today’s share.
 
+## Demand growth framing (CEC IEPR 2025 vs EIA national)
+
+Site intro and StatBubbles cite the **CEC's** adopted demand forecast, not a projection from this project's model. Do not upgrade C6/C7/C8 on the strength of this framing.
+
+| Metric | Value | Year / horizon | Source | Status |
+|---|---|---|---|---|
+| CEC demand forecast adoption | Adopted Jan 21, 2026 (CED 2025 / 2025 IEPR) | Forecast years 2025–2045 | [CED 2025 Demand Side Modeling](https://www.energy.ca.gov/data-reports/california-energy-planning-library/forecasts-and-system-planning/demand-side-3) | **Confirmed** — CEC primary page |
+| Largest CAISO peak demand growth driver through 2045 | EV charging / transportation electrification (larger than AI data centers in the same forecast) | Through 2045 | Same CEC IEPR demand forecast (adopted Jan 21, 2026); secondary coverage (e.g. RTO Insider, E&E News) reporting the adopted finding | **Forecast citation (Moderate-Strong)** - cite as CEC finding; not this app's model |
+| CAISO peak demand rise (high scenario) | **Up to ~61%** by ~2045, mostly from EVs | ~2045 high path | Same adopted CEC forecast as reported in secondary summaries of the high scenario; UI label locked as “Up to 61%” | **Forecast citation** — re-check exact high-scenario % against CED 2025 Peak Forecast tables before tightening precision |
+| Data-center estimate upward revision (same forecast) | DC component revised upward shortly before adoption (early Jan 2026) | Pre-adoption update | CEC demand-side page lists “Updated Results for Data Centers, Known Loads…” (January 5, 2026 DAWG Presentation) | **Confirmed** — update noted on CEC page; state explicitly wherever EV-vs-DC is cited |
+| National contrast (not CA peak) | Data centers “dominant driver of long-term U.S. electricity growth” | AEO2026 through 2050 | [EIA AEO2026](https://www.eia.gov/outlooks/aeo/); [press release Apr 8, 2026](https://www.eia.gov/pressroom/releases/press587.php) (exact primary wording) | **Confirmed** — national framing only |
+| CA relative DC market-share decline (contrast) | Developers favor Texas/Southeast (power / interconnection) | Bloom Energy 2026 Data Center Power Report (Jan 2026) | Industry report; no approved primary PDF URL in this repo | **Methods-only** — do not put in StatBubbles until a primary URL is verified |
+
 ## EV / PHEV adoption, California
 
 | Metric | Value | Year | Source | Status |

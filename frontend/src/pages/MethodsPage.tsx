@@ -173,6 +173,54 @@ export default function MethodsPage() {
             % of peak by ~2040 ({PROVENANCE.dataCenters.forecast2040Label}).
           </li>
           <li>
+            <strong>
+              Forecast citation ({PROVENANCE.ieprDemandForecast.strengthLabel}).
+            </strong>{" "}
+            <a
+              href={PROVENANCE.ieprDemandForecast.url}
+              target="_blank"
+              rel="noreferrer"
+            >
+              {PROVENANCE.ieprDemandForecast.name}
+            </a>
+            , adopted {PROVENANCE.ieprDemandForecast.adopted}:{" "}
+            {PROVENANCE.ieprDemandForecast.peakDriverFinding}. Site header uses
+            the locked high-scenario label{" "}
+            {PROVENANCE.ieprDemandForecast.highScenarioPeakRiseLabel} (
+            {PROVENANCE.ieprDemandForecast.highScenarioPeakRiseNote}).{" "}
+            {PROVENANCE.ieprDemandForecast.dataCenterUpwardRevisionNote} This is
+            the CEC's forecast, not a model output from this project, and it
+            does not upgrade claims C6/C7/C8. Retrieved{" "}
+            {PROVENANCE.ieprDemandForecast.retrievedAsOf}.
+          </li>
+          <li>
+            <strong>Confirmed (national contrast only).</strong>{" "}
+            <a
+              href={PROVENANCE.eiaAeo2026.url}
+              target="_blank"
+              rel="noreferrer"
+            >
+              {PROVENANCE.eiaAeo2026.name}
+            </a>{" "}
+            ({PROVENANCE.eiaAeo2026.published}): "
+            {PROVENANCE.eiaAeo2026.nationalFinding}."{" "}
+            <a
+              href={PROVENANCE.eiaAeo2026.pressUrl}
+              target="_blank"
+              rel="noreferrer"
+            >
+              EIA press release
+            </a>
+            . National framing only; not a California peak-share claim.
+            Retrieved {PROVENANCE.eiaAeo2026.retrievedAsOf}.
+          </li>
+          <li>
+            <strong>Methods-only (not in StatBubbles).</strong>{" "}
+            {PROVENANCE.bloomEnergyDcReport.name}:{" "}
+            {PROVENANCE.bloomEnergyDcReport.note} Status:{" "}
+            {PROVENANCE.bloomEnergyDcReport.status}.
+          </li>
+          <li>
             <strong>Confirmed (policy context).</strong>{" "}
             <a
               href={PROVENANCE.accIi.url}
