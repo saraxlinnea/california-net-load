@@ -1,0 +1,26 @@
+[
+  {
+    "date": "2024-09-05",
+    "label": "2024-09-05 · CAISO 2024 peak day (~48.3 GW)"
+  },
+  {
+    "date": "2025-01-13",
+    "label": "2025-01-13 · winter weekday (milder belly; hourly peak ~27.2 GW)"
+  },
+  {
+    "date": "2025-04-16",
+    "label": "2025-04-16 · spring weekday (hourly peak ~27.2 GW)"
+  },
+  {
+    "date": "2025-04-18",
+    "label": "2025-04-18 · spring belly weekday (deepest net-load trough in library)"
+  },
+  {
+    "date": "2025-08-21",
+    "label": "2025-08-21 · CAISO 2025 peak day (~44.5 GW)"
+  },
+  {
+    "date": "2026-07-15",
+    "label": "2026-07-15 · summer weekday (hourly peak ~43.4 GW)"
+  }
+]

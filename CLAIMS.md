@@ -1,0 +1,85 @@
+# CLAIMS.md
+
+Locked claim strength labels for the duck-curve viewer.
+Do not upgrade a label without new primary evidence.
+
+Strength scale (Strong → Speculative), AI-OS-style:
+
+| Strength | Meaning here |
+|----------|----------------|
+| **Strong** | Primary source or definitional identity; cross-checked where noted |
+| **Moderate** | Verified inputs with known model simplifications or year mismatch |
+| **Weak** | Back-of-envelope or conditional on heavy assumptions |
+| **Weak / Speculative** | Illustrative model behavior, not a real program or procurement study |
+
+**UI rule:** Strong / Moderate may appear as plain metrics. Weak / Speculative must say “illustrative,” “stress test,” or show a claim id.
+
+---
+
+## Locked claims (C1–C9)
+
+| ID | Claim | Label | Evidence |
+|----|--------|--------|----------|
+| **C1** | This day’s CAISO net load = load − solar − wind | **Strong** | Processed CAISO CSV; `MATH.md`; `DATA_SPEC.md` |
+| **C2** | Mid AFDC fleet + CEC shape ≈ ~16 GWh/day | **Strong** | `BENCHMARKS.md`; `frontend/scripts/check-adoption-stress.mjs` |
+| **C3** | \(N_{\text{LDV}} = 29{,}657{,}259\) as of 2025-12-31 | **Strong** | CEC workbook sum; `BENCHMARKS.md`; `provenance.ts` |
+| **C4** | Today’s plug-in share ≈ \(N_0 / N_{\text{LDV}}\) (~6.7%) | **Moderate** | AFDC \(N_0\) vs CEC LDV stock years differ; `BENCHMARKS.md` |
+| **C5** | PG&E EV schedule cost on one season day | **Moderate** | Verified TOU PDF → `tou_rates_pge.csv`; simplified bill model; `MATH.md` |
+| **C6** | Linear scale to 50%/100% LDV shows order-of-magnitude MW / % of day energy | **Weak as forecast; Strong as stress arithmetic** | `adoptionStress.ts`; `MATH.md` §3b; honesty copy on `/` |
+| **C7** | Managed participation \(p\) reduces evening ramp in this model | **Weak / Speculative** | Illustrative DR mix; not a real program; `MATH.md` §3b |
+| **C8** | BESS flatten MW / MWh | **Weak** | `storageSizing.ts`; back-of-envelope; Storage page caveat |
+| **C9** | Stack CI lb/MWh | **Moderate** | Fuel mix CSV + cited EFs; import/EF caveats in `fuelTypes.ts` / `provenance.ts` |
+
+Related (not a separate C-id): day generation mix pie on `/` sums CAISO fuel-mix MW as MWh (**Strong** as sourced generation-by-fuel). CEC data-center **peak demand share** (~1,000 MW / ~2% of CAISO peak, early 2026) is **Confirmed** in `BENCHMARKS.md` and `provenance.ts` (`PROVENANCE.dataCenters`). That figure is peak share of system peak, **not** annual end-use energy share. End-use / generation-mix pie slices (homes, data centers, industry) remain **out of scope** on the fuel-mix donut (would misrepresent CAISO generation-by-fuel).
+
+---
+
+## Live UI map by route
+
+### `/` Adoption (home)
+
+| UI element | Claim | Label shown |
+|------------|--------|-------------|
+| Net load series on chart | C1 | Strong (footer / sources) |
+| Fleet \(N\), today % LDV | C3, C4 | Strong / Moderate |
+| Peak EV, % of day CAISO energy, peak net+EV | C6 | Weak as forecast; Strong as stress arithmetic |
+| Evening ramp on net+EV | C1 + scaled EV | Strong grid + C6 stress |
+| Ramp relief (managed \(p\)) | C7 | Weak / Speculative |
+| Generation donut | CAISO fuel CSV | Strong (generation-by-fuel); end-use note |
+| EV vs BESS ΔR, \(P_{\text{equiv}}\), peak cut, energy shifted | C7 (+ C8 for flatten ref) | Weak / Speculative; illustrative |
+
+### `/charge` (PG&E costs)
+
+| UI element | Claim | Label |
+|------------|--------|--------|
+| Duck / net load chart | C1 | Strong |
+| CEC / midday / off-peak schedule costs | C5 | Moderate |
+| $/car·year and $/car·month | C5 + annualization caveat | Moderate; illustrative annualization |
+
+### `/fuel`
+
+| UI element | Claim | Label |
+|------------|--------|--------|
+| Fuel-mix stack | CAISO fuel CSV | Strong (sourced) |
+| Operational CI line | C9 | Moderate |
+
+### `/storage`
+
+| UI element | Claim | Label |
+|------------|--------|--------|
+| Power / energy / duration to flatten | C8 | Weak |
+
+### `/compare`
+
+| UI element | Claim | Label |
+|------------|--------|--------|
+| Side-by-side net load / EV overlay | C1 (+ overlay scale) | Strong grid; EV overlay same as Charge/Adoption assumptions |
+| Day comparison cards | C1 | Strong for each day’s CSV |
+
+---
+
+## Upgrade rules
+
+- Do not promote C6/C7/C8 without new evidence (real DR program data, interconnection study, or verified BESS sizing method).
+- Do not add data-center or other end-use slices to the CAISO **generation-mix** pie: fuel mix is generation by fuel. A separate, correctly labeled peak-share callout may use `PROVENANCE.dataCenters` (Confirmed); do not treat that peak share as annual energy or as a fuel-mix slice.
+- Do not cite GridLab/Brattle (~4,500 / ~1,600 MW) as confirmed.

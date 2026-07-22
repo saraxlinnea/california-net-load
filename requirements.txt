@@ -1,0 +1,6 @@
+# Python 3.10+: pull_caiso_day.py shims StrEnum for gridstatus on 3.10
+gridstatus>=0.29.0
+pandas>=2.0.0
+numpy>=1.24.0
+matplotlib>=3.7.0
+certifi>=2024.0.0

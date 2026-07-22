@@ -1,0 +1,38 @@
+# Dependencies / envs
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+
+# Node
+node_modules/
+frontend/dist/
+frontend/.vite/
+npm-debug.log*
+yarn-error.log*
+
+# OS / editor / agent tooling
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+.cursor/
+*.swp
+*~
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Local plot outputs (keep data/processed CSVs)
+/*.png
+duck_curve_*.png
+ev_overlay_*.png
+
+# Optional local caches
+.cache/
+*.log

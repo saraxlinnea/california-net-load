@@ -1,0 +1,19 @@
+plan,season,period,start_hour,end_hour,rate_cents_kwh,source,as_of_date,notes
+EV2-A,Summer,Off-Peak,0,15,23,PG&E Residential rate plan pricing PDF,2026-03-01,"Hours are [start, end); Summer = Jun 1–Sep 30"
+EV2-A,Summer,Partial-Peak,15,16,43,PG&E Residential rate plan pricing PDF,2026-03-01,Also 21–24
+EV2-A,Summer,Partial-Peak,21,24,43,PG&E Residential rate plan pricing PDF,2026-03-01,
+EV2-A,Summer,Peak,16,21,54,PG&E Residential rate plan pricing PDF,2026-03-01,
+EV2-A,Winter,Off-Peak,0,15,23,PG&E Residential rate plan pricing PDF,2026-03-01,"Winter = Oct 1–May 31"
+EV2-A,Winter,Partial-Peak,15,16,39,PG&E Residential rate plan pricing PDF,2026-03-01,Also 21–24
+EV2-A,Winter,Partial-Peak,21,24,39,PG&E Residential rate plan pricing PDF,2026-03-01,
+EV2-A,Winter,Peak,16,21,41,PG&E Residential rate plan pricing PDF,2026-03-01,
+EV-B,Summer,Off-Peak,23,24,26,PG&E Residential rate plan pricing PDF,2026-03-01,Also wraps 0–7
+EV-B,Summer,Off-Peak,0,7,26,PG&E Residential rate plan pricing PDF,2026-03-01,
+EV-B,Summer,Partial-Peak,7,14,38,PG&E Residential rate plan pricing PDF,2026-03-01,Also 21–23
+EV-B,Summer,Partial-Peak,21,23,38,PG&E Residential rate plan pricing PDF,2026-03-01,
+EV-B,Summer,Peak,14,21,62,PG&E Residential rate plan pricing PDF,2026-03-01,
+EV-B,Winter,Off-Peak,23,24,24,PG&E Residential rate plan pricing PDF,2026-03-01,Also wraps 0–7
+EV-B,Winter,Off-Peak,0,7,24,PG&E Residential rate plan pricing PDF,2026-03-01,
+EV-B,Winter,Partial-Peak,7,14,31,PG&E Residential rate plan pricing PDF,2026-03-01,Also 21–23
+EV-B,Winter,Partial-Peak,21,23,31,PG&E Residential rate plan pricing PDF,2026-03-01,
+EV-B,Winter,Peak,14,21,44,PG&E Residential rate plan pricing PDF,2026-03-01,

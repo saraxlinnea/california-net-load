@@ -1,0 +1,14 @@
+fuel,lb_co2_per_mwh,include_in_ci,source,notes
+Natural Gas,910,true,EIA/EPA order-of-magnitude US gas generation (~0.91 lb/kWh),Planning EF — not plant-specific; re-check before regulatory use
+Coal,2180,true,EIA order-of-magnitude US coal generation,Planning EF — CAISO coal is usually near zero
+Other,428.5,true,EPA eGRID2023 CAMX total output emission rate (proxy),Unknown mix — treated like regional average
+Imports,428.5,true,EPA eGRID2023 CAMX 428.5 lb CO2/MWh (summary tables rev. 2025),Proxy for unknown import mix — strong caveat
+Solar,0,true,EPA eGRID2023 (CO2 from solar considered zero),Operational CO2 only; not lifecycle
+Wind,0,true,EPA eGRID2023 (CO2 from wind considered zero),Operational CO2 only; not lifecycle
+Nuclear,0,true,EPA eGRID2023 (CO2 from nuclear considered zero),Operational CO2 only; not lifecycle
+Large Hydro,0,true,EPA eGRID2023 (water/hydro treated as zero CO2),Operational CO2 only
+Small Hydro,0,true,EPA eGRID2023 (water/hydro treated as zero CO2),Operational CO2 only
+Geothermal,0,true,EPA eGRID2023 non-combustion convention (simplified),Some geothermal has non-CO2 GHGs; omitted here
+Biomass,0,true,Biogenic CO2 excluded from this stack metric,Illustrative — biogenic accounting differs by protocol
+Biogas,0,true,Biogenic CO2 excluded from this stack metric,Illustrative — biogenic accounting differs by protocol
+Batteries,0,false,EPA eGRID energy storage CO2 treated as zero; excluded from CI denominator when charging,Discharge (MW>0) counted at 0 EF; charge (MW<0) excluded from generation mix
