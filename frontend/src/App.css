@@ -226,6 +226,63 @@ a:hover {
   color: var(--muted);
 }
 
+.hero-adoption {
+  margin-bottom: 1.35rem;
+}
+
+.hero-adoption h1 {
+  max-width: 40rem;
+  font-size: clamp(1.45rem, 3vw, 1.85rem);
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.25;
+}
+
+.hero-adoption .lede {
+  margin-top: 0.75rem;
+  max-width: 44rem;
+}
+
+.acc-ii-note {
+  grid-column: 1 / -1;
+  margin: 0.35rem 0 0;
+  max-width: 40rem;
+}
+
+.bridge-split {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 1rem;
+  margin: 0.75rem 0 0.35rem;
+}
+
+.bridge-block {
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--line);
+  background: var(--paper);
+}
+
+.bridge-value {
+  margin: 0.25rem 0;
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.bridge-detail {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.callout-intro {
+  margin: 0;
+  color: var(--ink);
+  font-weight: 500;
+}
+
 .adoption-key-stats {
   margin: 1rem 0 0;
   color: var(--muted);
@@ -543,6 +600,10 @@ a:hover {
   margin: 0 0 0.45rem;
   font-weight: 600;
   color: var(--ink);
+}
+
+.callout-share .callout-intro {
+  margin: 0 0 0.35rem;
 }
 
 .callout-claims {

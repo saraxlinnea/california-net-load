@@ -22,19 +22,22 @@ in place for a shippable viewer plus an honest PG&E-only cost calculator.
 2. `plot_duck_curve.py` / `ev_load_overlay.py` · static PNG pipeline
 3. `data/processed/tou_rates_pge.csv` · PG&E EV2-A and EV-B (re-verified 2026-07-20 PASS)
 4. `frontend/` · React + Plotly, multi-page nav:
-   - Primary nav: Adoption, Cost, Compare, Methods (Fuel/Storage unlinked)
+   - Primary nav: Adoption, Cost, Fuel, Compare, Methods (Storage unlinked)
    - Site tagline in Layout header on every page
-   - `/` Adoption · chart-first net+EV + chips + bridge + controls; speculative
-     charts parked (see gitignored `local/linkedin-wip.md`)
-   - `/charge` (Cost) · three-clocks callout (ramp / CEC EV / TOU ≠ CAISO) +
-     PG&E schedule $/car
+   - `/` Adoption · hero + chart-first net+EV + chips + split C5/C7 bridge +
+     ACC II sales-vs-fleet note; speculative charts parked
+     (see gitignored `local/linkedin-wip.md`)
+   - `/charge` (Cost page module `CostPage.tsx`) · three-clocks callout
+     (ramp / CEC EV / TOU ≠ CAISO) + PG&E schedule $/car; Plotly mode bar
+     hidden; dense legend on the right
+   - `/fuel` · fuel-mix stack + CI (in primary nav)
    - `/compare` · side-by-side days (BESS flatten demoted off Compare headline)
    - `/methods` · citations
-   - `/fuel`, `/storage` · routes live, not in nav
+   - `/storage` · route live, not in nav
    - GitHub Pages: Vite base `/california-net-load/`; workflow
      `.github/workflows/pages.yml` (enable Pages → GitHub Actions once)
    - Layout footer: verified-as-of + Methods link; `index.html` share meta
-     (OG/Twitter summary; no og:image until a checked-in asset exists)
+     with `og-share.png` (Pages absolute URL)
    - Per-car cost with **$/year and $/month** primary; PG&E PDF + EV plan links
    - Territory costs = PG&E only (SCE/SDG&E not verified)
    - Shared URL state via `shareState.ts`: `date`, `scenario`, `plan`, `mode`,
@@ -50,8 +53,11 @@ in place for a shippable viewer plus an honest PG&E-only cost calculator.
    Claim labels C1–C9 in `CLAIMS.md`; Adoption metrics and EV-vs-BESS strip
    show claim ids lightly in the UI.
 7. Data centers: Confirmed CEC peak-share (~1,000 MW / ~2% of CAISO peak,
-   early 2026) in `BENCHMARKS.md` + `provenance.ts`. Generation pie / end-use
-   slices stay blocked (peak MW share ≠ fuel-mix or end-use energy).
+   early 2026) and CEC ~2040 forecast (~4,500 MW / ~9%) in `BENCHMARKS.md` +
+   `provenance.ts`. Adoption shows a small peak-MW context chart (today /
+   2040 / EV stress bar). Generation pie / end-use slices stay blocked.
+8. CEC LDV raw workbook + county extract live in `data/raw/` (re-verified
+   2026-07-22; statewide sum 29,657,259).
 
 ## Suggested next steps
 

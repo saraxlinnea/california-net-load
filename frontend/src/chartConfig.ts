@@ -28,13 +28,42 @@ export const PLOTLY_FONT =
 export type BasePlotlyOpts = {
   margin?: { t?: number; r?: number; b?: number; l?: number; pad?: number };
   showLegend?: boolean;
+  /** Dense multi-trace charts (Cost) use a right legend; default is top horizontal. */
+  legendPlacement?: "top" | "right";
 };
 
 /** Shared Plotly chrome: transparent paper/plot, quiet legend + grids. */
 export function basePlotlyLayout(opts: BasePlotlyOpts = {}): Partial<Layout> {
   const showLegend = opts.showLegend !== false;
+  const legendPlacement = opts.legendPlacement ?? "top";
+  const legend =
+    !showLegend
+      ? { orientation: "h" as const }
+      : legendPlacement === "right"
+        ? {
+            orientation: "v" as const,
+            x: 1.02,
+            y: 0.5,
+            bgcolor: "rgba(0,0,0,0)",
+            borderwidth: 0,
+            font: { size: 10, color: PLOTLY_MUTED },
+          }
+        : {
+            orientation: "h" as const,
+            y: 1.12,
+            x: 0,
+            bgcolor: "rgba(0,0,0,0)",
+            borderwidth: 0,
+            font: { size: 10, color: PLOTLY_MUTED },
+          };
   return {
-    margin: { t: 40, r: 24, b: 52, l: 60, ...(opts.margin ?? {}) },
+    margin: {
+      t: 40,
+      r: legendPlacement === "right" ? 140 : 24,
+      b: 52,
+      l: 60,
+      ...(opts.margin ?? {}),
+    },
     paper_bgcolor: "rgba(0,0,0,0)",
     plot_bgcolor: "rgba(0,0,0,0)",
     font: {
@@ -42,16 +71,7 @@ export function basePlotlyLayout(opts: BasePlotlyOpts = {}): Partial<Layout> {
       color: PLOTLY_INK,
       size: 12,
     },
-    legend: showLegend
-      ? {
-          orientation: "h",
-          y: 1.12,
-          x: 0,
-          bgcolor: "rgba(0,0,0,0)",
-          borderwidth: 0,
-          font: { size: 10, color: PLOTLY_MUTED },
-        }
-      : { orientation: "h" },
+    legend,
     xaxis: {
       gridcolor: PLOTLY_GRID_SOFT,
       zeroline: false,
@@ -346,13 +366,18 @@ export function buildLayout(
   showTouRates: boolean,
   annotations: Array<Partial<Annotations>> = [],
 ): Partial<Layout> {
+  const dense = showTouRates;
   const base = basePlotlyLayout({
-    margin: { t: 40, r: showTouRates ? 64 : 24, b: 52, l: 60 },
+    legendPlacement: dense ? "right" : "top",
+    margin: dense
+      ? { t: 48, r: 160, b: 52, l: 60 }
+      : { t: 40, r: 24, b: 52, l: 60 },
   });
   const layout: Partial<Layout> = {
     ...base,
     xaxis: {
       ...base.xaxis,
+      ...(dense ? { domain: [0, 0.78] } : {}),
       title: { text: "Hour (US/Pacific)", font: { size: 11, color: PLOTLY_MUTED } },
       tickformat: "%-I %p",
       dtick: 3 * 60 * 60 * 1000,

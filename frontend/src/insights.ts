@@ -303,9 +303,19 @@ export type ShiftBridgeInput = {
 };
 
 export type ShiftBridgeCallout = {
-  /** LinkedIn-style arrow sentence (or prompt when p = 0) */
-  sentence: string;
-  /** Short echo for /charge */
+  /** Prompt when participation is zero */
+  prompt: string;
+  /** Short intro for the split blocks */
+  intro: string;
+  /** C7 illustrative grid relief label + value */
+  gridLabel: string;
+  gridValue: string;
+  gridDetail: string;
+  /** C5 PG&E energy cost label + value */
+  costLabel: string;
+  costValue: string;
+  costDetail: string;
+  /** Short echo line for /charge (still two-claim, not one blend) */
   echo: string;
   participatePct: number;
   rampReliefMwPerHour: number;
@@ -313,10 +323,11 @@ export type ShiftBridgeCallout = {
   plan: string;
   hasRelief: boolean;
   hasSavings: boolean;
+  showSplit: boolean;
 };
 
 /**
- * Product bridge: one LinkedIn sentence from existing rampRelief + midday-vs-CEC.
+ * Product bridge: separate C7 illustrative ramp relief from C5 PG&E $/car.
  * No new rate or ramp formulas.
  */
 export function buildShiftBridgeCallout(
@@ -328,28 +339,44 @@ export function buildShiftBridgeCallout(
   const hasSavings = input.savingsYearlyPerCar > 0;
   const plan = input.savingsPlan;
   const dollars = formatDollars(input.savingsYearlyPerCar);
+  const showSplit = pct > 0;
 
-  let sentence: string;
-  if (pct <= 0) {
-    sentence =
-      "Set % of charging shifted to midday (or Show the shift) to see evening ramp relief and PG&E midday-vs-CEC $/car·year together.";
-  } else if (hasRelief && hasSavings) {
-    sentence = `Shift ${pct}% of charging to midday → ramp eases by ${relief.toLocaleString()} MW/h → saves ~${dollars}/car·year on PG&E ${plan}.`;
-  } else if (hasRelief) {
-    sentence = `Shift ${pct}% of charging to midday → ramp eases by ${relief.toLocaleString()} MW/h in this model. On PG&E ${plan} for this season day, midday does not beat unmanaged CEC on $/car·year.`;
-  } else if (hasSavings) {
-    sentence = `Shift ${pct}% of charging to midday → evening ramp relief is about 0 MW/h at this fleet → still saves ~${dollars}/car·year on PG&E ${plan} (midday vs CEC).`;
-  } else {
-    sentence = `At ${pct}% shifted to midday, this day and fleet show little ramp relief and little midday-vs-CEC $/car savings on PG&E ${plan}.`;
-  }
+  const prompt =
+    "Raise % of charging shifted to midday (or use a preset) to see illustrative evening ramp relief next to PG&E midday-vs-CEC energy $/car·year.";
 
-  const echo =
-    hasRelief && hasSavings
-      ? `Shift ${pct}% midday → ${relief.toLocaleString()} MW/h ramp relief → ~${dollars}/car·year on PG&E ${plan}.`
-      : sentence;
+  const intro = showSplit
+    ? `At ${pct}% of daily charging shifted to midday, same kWh, different hours:`
+    : prompt;
+
+  const gridLabel = "Illustrative grid relief (C7)";
+  const gridValue = hasRelief
+    ? `${relief.toLocaleString()} MW/h`
+    : "About 0 MW/h";
+  const gridDetail = hasRelief
+    ? "Evening ramp rate vs unmanaged CEC at this fleet (illustrative midday mix, not a real DR program)."
+    : "Little evening ramp relief at this fleet and day in this model.";
+
+  const costLabel = "PG&E energy cost (C5)";
+  const costValue = hasSavings
+    ? `~${dollars}/car·year`
+    : "No midday edge";
+  const costDetail = hasSavings
+    ? `Midday vs unmanaged CEC on ${plan}; energy charges only, PG&E territory only.`
+    : `On ${plan} for this season day, midday does not beat unmanaged CEC on $/car·year (energy charges only).`;
+
+  const echo = showSplit
+    ? `${gridLabel}: ${gridValue}. ${costLabel}: ${costValue}.`
+    : prompt;
 
   return {
-    sentence,
+    prompt,
+    intro,
+    gridLabel,
+    gridValue,
+    gridDetail,
+    costLabel,
+    costValue,
+    costDetail,
     echo,
     participatePct: pct,
     rampReliefMwPerHour: relief,
@@ -357,6 +384,7 @@ export function buildShiftBridgeCallout(
     plan,
     hasRelief,
     hasSavings,
+    showSplit,
   };
 }
 

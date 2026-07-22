@@ -240,8 +240,66 @@ export default function AdoptionPanel({
   const chipHalf50 =
     preset === "half" && Math.abs(state.participate - 0.5) < 1e-4;
 
+  const dc = PROVENANCE.dataCenters;
+  const dcPeakChart = useMemo(() => {
+    const labels = [
+      `Data centers today (${dc.asOf})`,
+      "Data centers ~2040 (forecast)",
+      "EV peak (this stress preset)",
+    ];
+    const values = [
+      dc.peakMwApprox,
+      dc.forecast2040PeakMwApprox,
+      result.peakEvMw,
+    ];
+    return {
+      data: [
+        {
+          type: "bar" as const,
+          x: labels,
+          y: values,
+          marker: {
+            color: ["#3a4a58", "#5c636b", "#1f7a4c"],
+          },
+          hovertemplate: "%{y:,.0f} MW<extra>%{x}</extra>",
+        },
+      ] as Data[],
+      layout: {
+        ...buildLayout([], false, []),
+        title: {
+          text: "Peak MW context: CEC data centers vs this EV stress peak",
+          font: { size: 14 },
+          x: 0,
+          xanchor: "left" as const,
+        },
+        margin: { t: 56, r: 24, b: 96, l: 60 },
+        yaxis: {
+          title: { text: "MW (peak)" },
+          rangemode: "tozero" as const,
+        },
+        xaxis: {
+          title: { text: "" },
+          tickangle: -15,
+        },
+        showlegend: false,
+      },
+    };
+  }, [dc, result.peakEvMw]);
+
   return (
     <section className="adoption-panel" aria-label="Adoption stress test">
+      <header className="hero hero-adoption">
+        <h1>When EVs charge matters as much as how many there are</h1>
+        <p className="lede">
+          On a real CAISO day, the evening net-load climb is the hard window.
+          This page scales California plug-in charging and shifts a share into
+          midday to see how that changes coincidence with the ramp, and what
+          simplified PG&E energy $/car look like. Fleet presets are stress
+          arithmetic on today’s CEC shape, not forecasts of when the on-road
+          fleet turns over.
+        </p>
+      </header>
+
       <section className="chart-panel" aria-label="Net load plus EV">
         <Plot
           data={chart.data}
@@ -308,7 +366,21 @@ export default function AdoptionPanel({
         className="callout callout-honesty callout-share"
         aria-label="Shift charging bridge"
       >
-        <p className="callout-headline">{shiftBridge.sentence}</p>
+        <p className="callout-intro">{shiftBridge.intro}</p>
+        {shiftBridge.showSplit ? (
+          <div className="bridge-split">
+            <div className="bridge-block">
+              <p className="cost-sublabel">{shiftBridge.gridLabel}</p>
+              <p className="bridge-value">{shiftBridge.gridValue}</p>
+              <p className="bridge-detail">{shiftBridge.gridDetail}</p>
+            </div>
+            <div className="bridge-block">
+              <p className="cost-sublabel">{shiftBridge.costLabel}</p>
+              <p className="bridge-value">{shiftBridge.costValue}</p>
+              <p className="bridge-detail">{shiftBridge.costDetail}</p>
+            </div>
+          </div>
+        ) : null}
         <p className="callout-claims">
           Illustrative grid relief · PG&E energy charges only ·{" "}
           <Link to={`/methods${qs}`}>Methods</Link>
@@ -381,6 +453,19 @@ export default function AdoptionPanel({
             />
             custom %
           </label>
+          <p className="field-hint acc-ii-note">
+            <a
+              href={PROVENANCE.accIi.url}
+              target="_blank"
+              rel="noreferrer"
+            >
+              {PROVENANCE.accIi.name}
+            </a>{" "}
+            sets new light-duty ZEV sales shares (35% in 2026, 68% in 2030, 100%
+            by 2035). That is sales share, not on-road fleet share; vehicles stay
+            registered for years, so fleet share lags. The 50% / 100% LDV presets
+            here are stress scenarios, not timeline predictions.
+          </p>
         </fieldset>
 
         {!ldvOk && (
@@ -497,6 +582,38 @@ export default function AdoptionPanel({
           {Math.round(result.rampRelief).toLocaleString()} MW/h vs unmanaged
         </p>
       </div>
+
+      <section
+        className="chart-panel"
+        aria-label="Data center peak share versus EV stress peak"
+      >
+        <Plot
+          data={dcPeakChart.data}
+          layout={{ ...dcPeakChart.layout, autosize: true }}
+          config={PLOTLY_CONFIG}
+          style={{ width: "100%", height: "320px" }}
+          useResizeHandler
+        />
+        <div className="chart-copy">
+          <p className="chart-narrative">
+            CEC data-center figures are peak demand share of CAISO system peak,
+            not annual energy and not a fuel-mix pie. The EV bar is this page’s
+            scaled peak charging MW (stress arithmetic on today’s CEC shape),
+            Weak as a fleet forecast.
+          </p>
+          <p className="chart-sources">
+            <a
+              href={PROVENANCE.dataCenters.url}
+              target="_blank"
+              rel="noreferrer"
+            >
+              {PROVENANCE.dataCenters.source}
+            </a>
+            {" · "}
+            {PROVENANCE.dataCenters.forecast2040Label} · EV bar C6
+          </p>
+        </div>
+      </section>
 
       {pageGuide}
     </section>

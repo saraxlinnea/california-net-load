@@ -164,7 +164,29 @@ export default function MethodsPage() {
             : {PROVENANCE.dataCenters.methodologyNote}. Retrieved{" "}
             {PROVENANCE.dataCenters.retrievedAsOf}. This is a peak demand share
             of CAISO system peak, not an annual end-use energy share, and not a
-            generation-mix pie slice.
+            generation-mix pie slice. Forecast only: about{" "}
+            {PROVENANCE.dataCenters.forecast2040PeakMwApprox.toLocaleString()}{" "}
+            MW /{" "}
+            {Math.round(
+              PROVENANCE.dataCenters.forecast2040PeakShareOfCaisoApprox * 100,
+            )}
+            % of peak by ~2040 ({PROVENANCE.dataCenters.forecast2040Label}).
+          </li>
+          <li>
+            <strong>Confirmed (policy context).</strong>{" "}
+            <a
+              href={PROVENANCE.accIi.url}
+              target="_blank"
+              rel="noreferrer"
+            >
+              {PROVENANCE.accIi.name}
+            </a>
+            : new light-duty ZEV sales shares rise to{" "}
+            {Math.round(PROVENANCE.accIi.salesShare2026 * 100)}% (2026),{" "}
+            {Math.round(PROVENANCE.accIi.salesShare2030 * 100)}% (2030), and{" "}
+            {Math.round(PROVENANCE.accIi.salesShare2035 * 100)}% (2035).{" "}
+            {PROVENANCE.accIi.note} Retrieved{" "}
+            {PROVENANCE.accIi.retrievedAsOf}.
           </li>
           <li>
             <strong>Unverified. Not shown as confirmed.</strong> GridLab/Brattle

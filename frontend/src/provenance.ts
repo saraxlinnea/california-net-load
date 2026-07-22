@@ -39,6 +39,9 @@ export const PROVENANCE = {
     ldvDownloadUrl:
       "https://www.energy.ca.gov/files/zev-and-infrastructure-stats-data",
     ldvRetrievedAsOf: "2026-07-22",
+    ldvReVerifiedAsOf: "2026-07-22",
+    ldvRawPath: "data/raw/Vehicle_Population_Last_updated_04-28-2026_ada.xlsx",
+    ldvExtractPath: "data/raw/ldv_county_totals_2025-12-31.csv",
   },
   tou: {
     source: "PG&E Residential rate plan pricing PDF",
@@ -68,6 +71,23 @@ export const PROVENANCE = {
       "https://www.energy.ca.gov/sites/default/files/2026-04/Data_Center_Methodology_Memo_ada.pdf",
     methodologyNote:
       "Methodology memo (Apr 15, 2026): ~1,000 MW existing data center peak demand as of December 2025",
+    retrievedAsOf: "2026-07-22",
+    /** CEC Planning Forecast projection (same Data Centers page); not current. */
+    forecast2040PeakMwApprox: 4_500,
+    forecast2040PeakShareOfCaisoApprox: 0.09,
+    forecast2040Label: "CEC Planning Forecast ~2040",
+  },
+  /**
+   * CARB Advanced Clean Cars II: manufacturer new-sales ZEV shares.
+   * Sales share ≠ on-road fleet share.
+   */
+  accIi: {
+    name: "CARB Advanced Clean Cars II",
+    salesShare2026: 0.35,
+    salesShare2030: 0.68,
+    salesShare2035: 1.0,
+    note: "Requirements are shares of new light-duty vehicle sales, not on-road fleet share. Fleet turnover lags sales by years.",
+    url: "https://ww2.arb.ca.gov/news/california-moves-accelerate-100-new-zero-emission-vehicle-sales-2035",
     retrievedAsOf: "2026-07-22",
   },
 } as const;

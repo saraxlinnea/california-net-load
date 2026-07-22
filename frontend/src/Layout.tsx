@@ -6,6 +6,7 @@ import "./App.css";
 const PRIMARY_NAV = [
   { to: "/", label: "Adoption" },
   { to: "/charge", label: "Cost" },
+  { to: "/fuel", label: "Fuel" },
   { to: "/compare", label: "Compare" },
   { to: "/methods", label: "Methods" },
 ] as const;

@@ -6,7 +6,7 @@ import AdoptionPage from "./pages/AdoptionPage";
 import ComparePage from "./pages/ComparePage";
 import FuelPage from "./pages/FuelPage";
 import MethodsPage from "./pages/MethodsPage";
-import OverviewPage from "./pages/OverviewPage";
+import CostPage from "./pages/CostPage";
 import StoragePage from "./pages/StoragePage";
 import "./index.css";
 
@@ -19,7 +19,7 @@ createRoot(document.getElementById("root")!).render(
       <Routes>
         <Route element={<Layout />}>
           <Route index element={<AdoptionPage />} />
-          <Route path="charge" element={<OverviewPage />} />
+          <Route path="charge" element={<CostPage />} />
           <Route path="fuel" element={<FuelPage />} />
           <Route path="storage" element={<StoragePage />} />
           <Route path="compare" element={<ComparePage />} />

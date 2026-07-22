@@ -43,7 +43,9 @@ Related (not a separate C-id): day generation mix pie on `/` sums CAISO fuel-mix
 | Net load + EV chart (default UI) | C1 + C6/C7 stress | Strong grid; Weak as forecast / Strong as arithmetic; C7 illustrative |
 | Fleet presets / today % LDV | C3, C4 | Strong / Moderate |
 | Peak EV + ramp relief key stats | C6, C7 | Stress arithmetic; Weak / Speculative for relief |
-| Shift bridge callout | C7 + C5 echo | Illustrative · Methods link |
+| Shift bridge callout | C7 and C5 as separate labeled blocks | Illustrative grid · Moderate cost · Methods |
+| ACC II note near fleet presets | Policy context | Sales share ≠ fleet share; stress presets |
+| DC peak-share bars (today / 2040 / EV stress) | CEC Confirmed + C6 EV bar | Peak MW share, not pie / not annual energy |
 | Generation donut / EV-vs-BESS / ladder | (parked) | Not in default LinkedIn UI; see `local/linkedin-wip.md` |
 
 ### `/charge` (PG&E costs)

@@ -84,6 +84,8 @@ export default function AdoptionPage() {
       <span className="page-guide-title">Also</span>
       <Link to={`/charge${qs}`}>Cost</Link>
       <span aria-hidden="true"> · </span>
+      <Link to={`/fuel${qs}`}>Fuel</Link>
+      <span aria-hidden="true"> · </span>
       <Link to={`/compare${qs}`}>Compare</Link>
       <span aria-hidden="true"> · </span>
       <Link to={`/methods${qs}`}>Methods</Link>
