@@ -11,66 +11,39 @@ import {
   type AdoptionStressResult,
 } from "./adoptionStress";
 import { buildLayout, buildRampAnnotation } from "./chartConfig";
-import { type ClaimId, claimTitle } from "./claims";
 import {
-  END_USE_NOTE,
-  GENERATION_PIE_CAVEAT,
-  buildGenerationPieLayout,
-  buildGenerationPieTraces,
-  dayFuelGenerationMwh,
-} from "./generationPie";
-import {
-  bestPlanSavings,
   buildShiftBridgeCallout,
   computeCostComparison,
+  middayVsCecSavings,
 } from "./insights";
-import { CHARGING_MODE_LABELS } from "./managedCharging";
 import { PLOTLY_CONFIG } from "./plotlyConfig";
-import { PROVENANCE, SOURCE_FOOTER } from "./provenance";
+import { PROVENANCE } from "./provenance";
 import {
-  MODES,
   SCENARIOS,
   SHOW_SHIFT_PARTICIPATE,
   shareSearchString,
   type ShareState,
 } from "./shareState";
-import {
-  estimateStorageToFlatten,
-  formatGw,
-  formatGwh,
-} from "./storageSizing";
-import type { ChargingMode } from "./managedCharging";
-import type { FuelMixRow } from "./fuelTypes";
-import type { EvRow, Scenario, TouRow } from "./types";
+import type { DayOption, EvRow, Scenario, TouRow } from "./types";
 import { SCENARIO_META } from "./types";
 
-function ClaimMark({ id }: { id: ClaimId }) {
-  return (
-    <span className="claim-mark" title={claimTitle(id)}>
-      {id}
-    </span>
-  );
-}
-
 const HONESTY =
-  "Illustrative scale-up: same CEC hourly shape and same kWh per car as today. Does not model new chargers, distribution limits, behavior change, or V2G. Not a resource-adequacy study. One CAISO day only.";
-
-const BESS_EQUIV_CAVEAT =
-  "Illustrative EV vs BESS equivalence: not a resource-adequacy or procurement study. Ramp-relief power proxy uses ΔR × ramp hours; peak cut is max net+EV difference vs unmanaged.";
+  "Illustrative: same CEC shape and kWh per car. Not a forecast.";
 
 type Props = {
   rows: EvRow[];
-  fuelRows: FuelMixRow[] | null;
   touRows: TouRow[];
+  days: DayOption[];
   date: string;
   state: ShareState;
+  onDateChange: (date: string) => void;
   onScenario: (scenario: Scenario) => void;
-  onMode: (mode: ChargingMode) => void;
   onAdoption: (adoption: number) => void;
   onScale: (scale: number) => void;
   onParticipate: (participate: number) => void;
   onTodayFleet: () => void;
-  /** Compact links shown after the primary chart */
+  onShowShift: () => void;
+  onHalfLdvShift: () => void;
   pageGuide?: ReactNode;
 };
 
@@ -88,11 +61,6 @@ function activePreset(state: ShareState): PresetId {
 function formatMw(n: number): string {
   if (Math.abs(n) >= 10_000) return `${(n / 1000).toFixed(1)} GW`;
   return `${Math.round(n).toLocaleString()} MW`;
-}
-
-function formatMwh(n: number): string {
-  if (Math.abs(n) >= 10_000) return `${(n / 1000).toFixed(1)} GWh`;
-  return `${Math.round(n).toLocaleString()} MWh`;
 }
 
 function buildAdoptionTraces(
@@ -140,7 +108,7 @@ function buildAdoptionTraces(
   traces.push({
     x: times,
     y: result.evLoads,
-    name: `EV scaled (${Math.round(result.participate * 100)}% shifted)`,
+    name: `EV (${Math.round(result.participate * 100)}% midday shift)`,
     type: "scatter",
     mode: "lines",
     fill: "tozeroy",
@@ -163,16 +131,18 @@ function buildAdoptionTraces(
 
 export default function AdoptionPanel({
   rows,
-  fuelRows,
   touRows,
+  days,
   date,
   state,
+  onDateChange,
   onScenario,
-  onMode,
   onAdoption,
   onScale,
   onParticipate,
   onTodayFleet,
+  onShowShift,
+  onHalfLdvShift,
   pageGuide,
 }: Props) {
   const [searchParams] = useSearchParams();
@@ -219,233 +189,151 @@ export default function AdoptionPanel({
   );
 
   const shiftBridge = useMemo(() => {
-    const savings = costs ? bestPlanSavings(costs) : null;
+    const savings = costs ? middayVsCecSavings(costs) : null;
     return buildShiftBridgeCallout({
-      rampUnmanagedMwPerHour: resultUnmanaged.ramp?.mwPerHour ?? null,
-      rampAtParticipateMwPerHour: result.ramp?.mwPerHour ?? null,
       rampReliefMwPerHour: result.rampRelief,
       participate: state.participate,
       savingsYearlyPerCar: savings?.savingsYearlyPerCar ?? 0,
       savingsPlan: savings?.plan ?? state.plan,
-      savingsAltLabel: savings?.altLabel ?? "a cheaper schedule",
     });
-  }, [costs, result, resultUnmanaged, state.participate, state.plan]);
+  }, [costs, result.rampRelief, state.participate, state.plan]);
 
   const chart = useMemo(() => {
     const data = buildAdoptionTraces(rows, result);
     const rampAnn = buildRampAnnotation(
       rows.map((r, i) => ({ ...r, net_load_MW: result.netPlusEv[i] })),
     );
-    return {
-      data,
-      layout: buildLayout([], false, rampAnn ? [rampAnn] : []),
-    };
-  }, [rows, result]);
-
-  const fuelShares = useMemo(
-    () => (fuelRows?.length ? dayFuelGenerationMwh(fuelRows) : []),
-    [fuelRows],
-  );
-
-  const pieChart = useMemo(() => {
-    if (!fuelShares.length) return null;
-    return {
-      data: buildGenerationPieTraces(fuelShares),
-      layout: buildGenerationPieLayout(date),
-    };
-  }, [fuelShares, date]);
-
-  const bessFlat = useMemo(() => estimateStorageToFlatten(rows), [rows]);
-
-  const bessEquiv = useMemo(() => {
-    const deltaR = result.rampRelief;
-    const hours = result.rampAtP0?.hours ?? result.ramp?.hours ?? 0;
-    const pEquiv = hours > 0 ? deltaR * hours : 0;
-    const deltaPeak =
-      resultUnmanaged.peakNetPlusEv - result.peakNetPlusEv;
-    const middaySet = new Set([10, 11, 12, 13, 14, 15]);
-    let eShifted = 0;
-    for (let i = 0; i < rows.length; i++) {
-      if (!middaySet.has(rows[i].hour)) continue;
-      eShifted += Math.max(
-        result.evLoads[i] - resultUnmanaged.evLoads[i],
-        0,
-      );
-    }
-    return { deltaR, pEquiv, deltaPeak, eShifted, hours };
-  }, [result, resultUnmanaged, rows]);
-
-  const evShapeChart = useMemo(() => {
-    const times = rows.map((r) => r.Time);
-    const data: Data[] = [
-      {
-        x: times,
-        y: result.unmanagedEvLoads,
-        name: "Unmanaged CEC",
-        type: "scatter",
-        mode: "lines",
-        line: { color: "rgba(31, 122, 76, 0.55)", width: 2, dash: "dot" },
-        hovertemplate: "%{y:,.0f} MW<extra>Unmanaged CEC</extra>",
-      },
-      {
-        x: times,
-        y: result.evLoads,
-        name: `Shifted mix (${Math.round(result.participate * 100)}% midday)`,
-        type: "scatter",
-        mode: "lines",
-        line: { color: "#1f7a4c", width: 2.5 },
-        hovertemplate: "%{y:,.0f} MW<extra>Shifted mix</extra>",
-      },
-    ];
+    const base = buildLayout([], false, rampAnn ? [rampAnn] : []);
     return {
       data,
       layout: {
-        ...buildLayout([], false, []),
+        ...base,
         title: {
-          text: "EV load shape · unmanaged vs shifted",
-          font: { size: 13 },
+          text: "Net load + EV charging",
+          font: { size: 14 },
           x: 0,
           xanchor: "left" as const,
         },
-        margin: { l: 60, r: 24, t: 48, b: 48 },
-        legend: { orientation: "h" as const, y: 1.12 },
+        margin: { ...(base.margin ?? {}), t: 56 },
+        xaxis: {
+          ...base.xaxis,
+          title: {
+            text: "Hour (US/Pacific)",
+            font: { size: 11 },
+          },
+        },
+        yaxis: {
+          ...base.yaxis,
+          title: { text: "MW", font: { size: 11 } },
+        },
       },
     };
   }, [rows, result]);
 
-  const rampBarChart = useMemo(() => {
-    const r0 = resultUnmanaged.ramp?.mwPerHour ?? 0;
-    const rp = result.ramp?.mwPerHour ?? 0;
-    return {
-      data: [
-        {
-          type: "bar" as const,
-          x: [
-            "0% shifted (unmanaged)",
-            `${Math.round(result.participate * 100)}% shifted`,
-          ],
-          y: [r0, rp],
-          marker: { color: ["#8a6d3b", "#3a4a58"] },
-          hovertemplate: "%{y:,.0f} MW/h<extra></extra>",
-        },
-      ] as Data[],
-      layout: {
-        title: {
-          text: "Evening ramp · MW/h",
-          font: { size: 13 },
-          x: 0,
-          xanchor: "left" as const,
-        },
-        margin: { l: 56, r: 24, t: 48, b: 56 },
-        yaxis: { title: "MW/h", gridcolor: "rgba(26,29,33,0.08)" },
-        paper_bgcolor: "rgba(0,0,0,0)",
-        plot_bgcolor: "rgba(0,0,0,0)",
-        showlegend: false,
-      },
-    };
-  }, [result, resultUnmanaged]);
-
-  const scaleLadder = useMemo(() => {
-    const today = computeAdoptionStress(rows, state.scenario, {
-      scale: 1,
-      participate: state.participate,
-    });
-    const half = hasLdvTotal()
-      ? computeAdoptionStress(rows, state.scenario, {
-          adoption: 0.5,
-          participate: state.participate,
-        })
-      : null;
-    const full = hasLdvTotal()
-      ? computeAdoptionStress(rows, state.scenario, {
-          adoption: 1,
-          participate: state.participate,
-        })
-      : null;
-    const labels = ["Today (AFDC)"];
-    const peakEv = [today.peakEvMw];
-    const pctEnergy = [today.pctOfCaisoEnergy];
-    if (half) {
-      labels.push("50% CA LDV");
-      peakEv.push(half.peakEvMw);
-      pctEnergy.push(half.pctOfCaisoEnergy);
-    }
-    if (full) {
-      labels.push("100% CA LDV");
-      peakEv.push(full.peakEvMw);
-      pctEnergy.push(full.pctOfCaisoEnergy);
-    }
-    return {
-      data: [
-        {
-          type: "bar" as const,
-          name: "Peak EV (MW)",
-          x: labels,
-          y: peakEv,
-          marker: { color: "#1f7a4c" },
-          hovertemplate: "%{y:,.0f} MW<extra>Peak EV</extra>",
-        },
-        {
-          type: "bar" as const,
-          name: "% of day CAISO energy",
-          x: labels,
-          y: pctEnergy,
-          yaxis: "y2",
-          marker: { color: "#3a4a58" },
-          hovertemplate: "%{y:.1f}%<extra>% of day energy</extra>",
-        },
-      ] as Data[],
-      layout: {
-        barmode: "group" as const,
-        title: {
-          text: "Scale ladder · same day and miles scenario",
-          font: { size: 13 },
-          x: 0,
-          xanchor: "left" as const,
-        },
-        margin: { l: 56, r: 56, t: 48, b: 56 },
-        yaxis: { title: "Peak EV (MW)", gridcolor: "rgba(26,29,33,0.08)" },
-        yaxis2: {
-          title: "% of day energy",
-          overlaying: "y" as const,
-          side: "right" as const,
-          showgrid: false,
-        },
-        legend: { orientation: "h" as const, y: 1.14 },
-        paper_bgcolor: "rgba(0,0,0,0)",
-        plot_bgcolor: "rgba(0,0,0,0)",
-      },
-    };
-  }, [rows, state.scenario, state.participate]);
-
-  const dc = PROVENANCE.dataCenters;
-  const peakEvVsDc =
-    dc.peakMwApprox > 0 ? result.peakEvMw / dc.peakMwApprox : null;
-
-  const scaleValue =
-    state.scale != null
-      ? state.scale
-      : result.scale;
-
-
+  const scaleValue = state.scale != null ? state.scale : result.scale;
   const customPct = Math.round(state.adoption * 1000) / 10;
+
+  const chipToday0 =
+    preset === "today" && Math.abs(state.participate) < 1e-6;
+  const chipToday50 =
+    preset === "today" && Math.abs(state.participate - 0.5) < 1e-4;
+  const chipHalf50 =
+    preset === "half" && Math.abs(state.participate - 0.5) < 1e-4;
 
   return (
     <section className="adoption-panel" aria-label="Adoption stress test">
+      <section className="chart-panel" aria-label="Net load plus EV">
+        <Plot
+          data={chart.data}
+          layout={{ ...chart.layout, autosize: true }}
+          config={PLOTLY_CONFIG}
+          style={{ width: "100%", height: "520px" }}
+          useResizeHandler
+        />
+        <div className="chart-copy">
+          <p className="chart-narrative">
+            Change the controls below and the lines move. Try{" "}
+            <strong>50% CA LDV</strong> to grow the green band, then{" "}
+            <strong>50% midday shift</strong> to pull charging out of the
+            evening. Solid lines are the shift mix; dotted lines (when shift is
+            above zero) are unmanaged CEC at the same fleet.
+          </p>
+          <div
+            className="adoption-chart-chips"
+            role="group"
+            aria-label="Quick chart presets"
+          >
+            <button
+              type="button"
+              className={
+                chipToday0 ? "shift-preset chip-active" : "shift-preset"
+              }
+              onClick={() => {
+                onTodayFleet();
+                onParticipate(0);
+              }}
+            >
+              Today · 0% shift
+            </button>
+            <button
+              type="button"
+              className={
+                chipToday50 ? "shift-preset chip-active" : "shift-preset"
+              }
+              onClick={() => {
+                onTodayFleet();
+                onParticipate(0.5);
+              }}
+            >
+              Today · 50% shift
+            </button>
+            <button
+              type="button"
+              className={
+                chipHalf50 ? "shift-preset chip-active" : "shift-preset"
+              }
+              disabled={!ldvOk}
+              onClick={onHalfLdvShift}
+            >
+              50% LDV · 50% shift
+            </button>
+          </div>
+          <p className="chart-sources">
+            {HONESTY} <Link to={`/methods${qs}`}>Methods</Link>
+          </p>
+        </div>
+      </section>
+
       <aside
         className="callout callout-honesty callout-share"
         aria-label="Shift charging bridge"
       >
-        <p className="callout-headline">{shiftBridge.headline}</p>
-        <p>
-          {shiftBridge.detail}{" "}
-          <Link to={`/charge${qs}`}>See PG&E $/car on Cost</Link>.
+        <p className="callout-headline">{shiftBridge.sentence}</p>
+        <p className="callout-claims">
+          Illustrative grid relief · PG&E energy charges only ·{" "}
+          <Link to={`/methods${qs}`}>Methods</Link>
         </p>
       </aside>
 
       <section className="controls" aria-label="Adoption controls">
+        {days.length > 0 && (
+          <label className="field">
+            <span>Day</span>
+            <select
+              value={date}
+              onChange={(event) => onDateChange(event.target.value)}
+            >
+              {days.map((day) => (
+                <option key={day.date} value={day.date}>
+                  {day.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+
         <fieldset className="field scenario">
-          <legend>Fleet preset</legend>
+          <legend>Fleet</legend>
           <label className={preset === "today" ? "active" : undefined}>
             <input
               type="radio"
@@ -541,7 +429,8 @@ export default function AdoptionPanel({
             }}
           />
           <span className="field-hint">
-            1× = {N0.toLocaleString()} plug-ins (AFDC {PROVENANCE.population.year})
+            1× = {N0.toLocaleString()} plug-ins (AFDC{" "}
+            {PROVENANCE.population.year})
           </span>
         </label>
 
@@ -564,31 +453,9 @@ export default function AdoptionPanel({
           ))}
         </fieldset>
 
-        <fieldset className="field scenario">
-          <legend>Charging schedule</legend>
-          {MODES.map((mode) => (
-            <label
-              key={mode}
-              className={state.mode === mode ? "active" : undefined}
-            >
-              <input
-                type="radio"
-                name="adoption-charging"
-                checked={state.mode === mode}
-                onChange={() => onMode(mode)}
-              />
-              {CHARGING_MODE_LABELS[mode]}
-            </label>
-          ))}
-          <span className="field-hint">
-            Shift share mixes CEC toward midday solar DR (MATH §3b). Schedule is
-            kept in the share URL for Cost and other pages.
-          </span>
-        </fieldset>
-
         <label className="field">
           <span>
-            Share of charging shifted to midday (
+            % of charging shifted to midday (
             {Math.round(state.participate * 100)}%)
           </span>
           <input
@@ -602,314 +469,36 @@ export default function AdoptionPanel({
             }
           />
           <span className="field-hint">
-            Illustrative: share of daily energy on the midday managed shape.
+            Share of daily energy on the midday shape.
             {resultUnmanaged.ramp && result.ramp ? (
               <>
                 {" "}
-                Evening ramp:{" "}
+                Evening ramp{" "}
                 {Math.round(resultUnmanaged.ramp.mwPerHour).toLocaleString()}{" "}
-                MW/h at 0% shifted →{" "}
-                {Math.round(result.ramp.mwPerHour).toLocaleString()} MW/h at{" "}
-                {Math.round(state.participate * 100)}%
+                → {Math.round(result.ramp.mwPerHour).toLocaleString()} MW/h
                 {result.rampRelief > 0
-                  ? ` (relief ${Math.round(result.rampRelief).toLocaleString()} MW/h)`
+                  ? ` (eases ${Math.round(result.rampRelief).toLocaleString()})`
                   : ""}
                 .
               </>
             ) : null}
           </span>
-          <button
-            type="button"
-            className="shift-preset"
-            onClick={() => {
-              onParticipate(SHOW_SHIFT_PARTICIPATE);
-              onMode("managed");
-            }}
-          >
+          <button type="button" className="shift-preset" onClick={onShowShift}>
             Show the shift ({Math.round(SHOW_SHIFT_PARTICIPATE * 100)}% midday)
           </button>
         </label>
       </section>
 
-      <div className="storage-grid adoption-metrics">
-        <div className="storage-card">
-          <p className="cost-sublabel">
-            Peak EV <ClaimMark id="C6" />
-          </p>
-          <p className="cost-big">
-            {formatMw(result.peakEvMw)}
-            <span>scaled fleet peak · stress arithmetic</span>
-          </p>
-        </div>
-        <div className="storage-card">
-          <p className="cost-sublabel">
-            % of this day’s CAISO energy <ClaimMark id="C6" />
-          </p>
-          <p className="cost-big">
-            {result.pctOfCaisoEnergy.toFixed(1)}%
-            <span>
-              {formatMwh(result.evEnergyMwh)} EV /{" "}
-              {formatMwh(result.caisoEnergyMwh)} load
-            </span>
-          </p>
-        </div>
-        <div className="storage-card">
-          <p className="cost-sublabel">
-            Peak net + EV <ClaimMark id="C6" />
-          </p>
-          <p className="cost-big">
-            {formatMw(result.peakNetPlusEv)}
-            <span>max of net load + scaled EV</span>
-          </p>
-        </div>
-        <div className="storage-card">
-          <p className="cost-sublabel">
-            Evening ramp <ClaimMark id="C1" />
-          </p>
-          <p className="cost-big">
-            {result.ramp
-              ? `${Math.round(result.ramp.mwPerHour).toLocaleString()} MW/h`
-              : "n/a"}
-            <span>
-              {result.ramp
-                ? `${result.ramp.startLabel} to ${result.ramp.endLabel}`
-                : "unavailable"}
-            </span>
-          </p>
-        </div>
-        <div className="storage-card">
-          <p className="cost-sublabel">
-            Ramp relief <ClaimMark id="C7" />
-          </p>
-          <p className="cost-big">
-            {Math.round(result.rampRelief).toLocaleString()} MW/h
-            <span>illustrative vs unmanaged (0% shifted)</span>
-          </p>
-        </div>
-        <div className="storage-card">
-          <p className="cost-sublabel">
-            Fleet N <ClaimMark id="C3" /> <ClaimMark id="C4" />
-          </p>
-          <p className="cost-big">
-            {Math.round(result.fleetN).toLocaleString()}
-            <span>
-              {Number.isFinite(result.adoption)
-                ? `${(result.adoption * 100).toFixed(2)}% LDV · `
-                : ""}
-              {result.scale.toFixed(2)}× today
-            </span>
-          </p>
-        </div>
-      </div>
-
-      <aside className="callout adoption-ev-share" aria-live="polite">
+      <div className="adoption-key-stats" aria-label="Key numbers">
         <p>
-          Modeled EV charging is{" "}
-          <strong>{result.pctOfCaisoEnergy.toFixed(1)}%</strong> of this day’s
-          CAISO load energy ({formatMwh(result.evEnergyMwh)} of{" "}
-          {formatMwh(result.caisoEnergyMwh)}).{" "}
-          <ClaimMark id="C6" /> Stress arithmetic on one day; Weak as a fleet
-          forecast.
+          <strong>Peak EV</strong> {formatMw(result.peakEvMw)}
+          {" · "}
+          <strong>Ramp relief</strong>{" "}
+          {Math.round(result.rampRelief).toLocaleString()} MW/h vs unmanaged
         </p>
-      </aside>
-
-      <section className="chart-panel">
-        <Plot
-          data={chart.data}
-          layout={{ ...chart.layout, autosize: true }}
-          config={PLOTLY_CONFIG}
-          style={{ width: "100%", height: "520px" }}
-          useResizeHandler
-        />
-        <div className="chart-copy">
-          <p className="chart-narrative">
-            Net load for {date} with EV charging scaled to{" "}
-            {Math.round(result.fleetN).toLocaleString()} plug-ins (
-            {result.scale.toFixed(2)}× AFDC today). When any share is shifted to
-            midday, the dotted series shows fully unmanaged CEC at the same
-            fleet size.
-          </p>
-          <p className="chart-sources">{SOURCE_FOOTER}</p>
-          <p className="chart-sources">{HONESTY}</p>
-        </div>
-      </section>
+      </div>
 
       {pageGuide}
-
-      <div className="adoption-secondary-charts">
-        <section
-          className="chart-panel"
-          aria-label="EV load shape unmanaged versus shifted"
-        >
-          <Plot
-            data={evShapeChart.data}
-            layout={{ ...evShapeChart.layout, autosize: true }}
-            config={PLOTLY_CONFIG}
-            style={{ width: "100%", height: "360px" }}
-            useResizeHandler
-          />
-          <div className="chart-copy">
-            <p className="chart-narrative">
-              How to read this: same fleet, day, and miles scenario. Dotted line
-              is fully unmanaged CEC; solid line is the shifted mix
-              ((1−p)·CEC + p·midday) from the midday-shift slider.
-            </p>
-            <p className="chart-sources">
-              <ClaimMark id="C7" /> Illustrative midday shape when p &gt; 0; not
-              a real utility DR program.
-            </p>
-          </div>
-        </section>
-
-        <section
-          className="chart-panel"
-          aria-label="Evening ramp comparison"
-        >
-          <Plot
-            data={rampBarChart.data}
-            layout={{ ...rampBarChart.layout, autosize: true }}
-            config={PLOTLY_CONFIG}
-            style={{ width: "100%", height: "360px" }}
-            useResizeHandler
-          />
-          <div className="chart-copy">
-            <p className="chart-narrative">
-              How to read this: average evening climb (MW/h) on net load + EV
-              from midday belly to evening peak, at 0% shifted versus the
-              current midday-shift share.
-            </p>
-            <p className="chart-sources">
-              <ClaimMark id="C7" /> Weak / Speculative · illustrative ramp
-              relief only.
-            </p>
-          </div>
-        </section>
-
-        <section
-          className="chart-panel adoption-ladder-panel"
-          aria-label="Adoption scale ladder"
-        >
-          <Plot
-            data={scaleLadder.data}
-            layout={{ ...scaleLadder.layout, autosize: true }}
-            config={PLOTLY_CONFIG}
-            style={{ width: "100%", height: "360px" }}
-            useResizeHandler
-          />
-          <div className="chart-copy">
-            <p className="chart-narrative">
-              How to read this: peak EV MW (left) and EV share of this day’s
-              CAISO load energy (right) at Today, 50% CA LDV, and 100% CA LDV,
-              holding day, miles scenario, and participation fixed.
-            </p>
-            <p className="chart-sources">
-              <ClaimMark id="C6" /> Strong as stress arithmetic on one day;
-              Weak as a fleet forecast.
-            </p>
-          </div>
-        </section>
-      </div>
-
-      {peakEvVsDc != null && (
-        <aside
-          className="callout adoption-dc-callout"
-          aria-label="Scaled EV peak versus CEC data-center peak share"
-        >
-          <p>
-            At this fleet, modeled peak EV is {formatMw(result.peakEvMw)}
-            {peakEvVsDc >= 0.01
-              ? ` (about ${peakEvVsDc.toFixed(1)}× the CEC ~${dc.peakMwApprox.toLocaleString()} MW data-center peak figure)`
-              : ""}
-            . CEC cites about {dc.peakMwApprox.toLocaleString()} MW, or about{" "}
-            {(dc.peakShareOfCaisoApprox * 100).toFixed(0)}% of CAISO system peak
-            ({dc.asOf};{" "}
-            <a href={dc.url} target="_blank" rel="noreferrer">
-              source
-            </a>
-            ). That is a peak demand share of system peak, not annual end-use
-            energy and not a generation-mix pie slice.{" "}
-            <ClaimMark id="C6" /> EV side is stress arithmetic.
-          </p>
-        </aside>
-      )}
-
-      {pieChart && (
-        <section
-          className="chart-panel adoption-pie-panel"
-          aria-label="CAISO generation mix"
-        >
-          <Plot
-            data={pieChart.data}
-            layout={{ ...pieChart.layout, autosize: true }}
-            config={PLOTLY_CONFIG}
-            style={{ width: "100%", height: "440px" }}
-            useResizeHandler
-          />
-          <div className="chart-copy">
-            <p className="chart-sources">{GENERATION_PIE_CAVEAT}</p>
-            <p className="chart-sources">{END_USE_NOTE}</p>
-          </div>
-        </section>
-      )}
-
-      <section
-        className="adoption-bess-equiv"
-        aria-label="EV flexibility versus battery storage"
-      >
-        <h2>EV flexibility vs battery storage</h2>
-        <p className="storage-lede">
-          Compare evening-ramp relief from managed EV charging to a rough
-          stationary BESS size on the same CAISO day.
-        </p>
-        <div className="storage-grid">
-          <div className="storage-card">
-            <p className="cost-sublabel">
-              Ramp relief ΔR <ClaimMark id="C7" />
-            </p>
-            <p className="cost-big">
-              {Math.round(bessEquiv.deltaR).toLocaleString()} MW/h
-              <span>illustrative · unmanaged ramp minus mixed</span>
-            </p>
-          </div>
-          <div className="storage-card">
-            <p className="cost-sublabel">
-              Illustrative BESS power <ClaimMark id="C7" />
-            </p>
-            <p className="cost-big">
-              {formatMw(bessEquiv.pEquiv)}
-              <span>
-                ΔR × {bessEquiv.hours.toFixed(1)} h climb · Weak / Speculative
-              </span>
-            </p>
-          </div>
-          <div className="storage-card">
-            <p className="cost-sublabel">
-              Peak net+EV cut <ClaimMark id="C7" />
-            </p>
-            <p className="cost-big">
-              {formatMw(bessEquiv.deltaPeak)}
-              <span>illustrative vs unmanaged at same fleet</span>
-            </p>
-          </div>
-          <div className="storage-card">
-            <p className="cost-sublabel">
-              Midday energy shifted <ClaimMark id="C7" />{" "}
-              <ClaimMark id="C8" />
-            </p>
-            <p className="cost-big">
-              {formatMwh(bessEquiv.eShifted)}
-              <span>
-                vs flatten BESS usable{" "}
-                {bessFlat ? formatGwh(bessFlat.usableEnergyMwh) : "n/a"}
-                {bessFlat ? ` / ${formatGw(bessFlat.powerMw)}` : ""}
-              </span>
-            </p>
-          </div>
-        </div>
-        <p className="cost-caveat">
-          {BESS_EQUIV_CAVEAT} See CLAIMS.md (C7, C8).
-        </p>
-      </section>
     </section>
   );
 }

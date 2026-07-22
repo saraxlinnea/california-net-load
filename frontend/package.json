@@ -8,7 +8,7 @@
     "predev": "npm run sync-data",
     "prebuild": "npm run sync-data",
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build && node scripts/postbuild-pages.mjs",
     "lint": "oxlint",
     "preview": "vite preview"
   },

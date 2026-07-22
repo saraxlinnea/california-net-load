@@ -2,11 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import Plot from "react-plotly.js";
 import { buildCompareLayout, buildCompareTraces } from "./compareChart";
 import { loadEvTimeseries } from "./loadData";
-import {
-  estimateStorageToFlatten,
-  formatGw,
-  formatGwh,
-} from "./storageSizing";
+import { formatGw } from "./storageSizing";
 import { computeEveningRamp } from "./insights";
 import { PLOTLY_CONFIG } from "./plotlyConfig";
 import type { DayOption, EvRow } from "./types";
@@ -75,10 +71,6 @@ export default function ComparePanel({
         mildStats.ramp != null && peakStats.ramp != null
           ? peakStats.ramp - mildStats.ramp
           : null,
-      bessPower:
-        mildStats.storage && peakStats.storage
-          ? peakStats.storage.powerMw - mildStats.storage.powerMw
-          : null,
     };
   }, [mildStats, peakStats]);
 
@@ -118,8 +110,8 @@ export default function ComparePanel({
         <div className="compare-deltas" aria-label="Day B minus Day A">
           <p className="compare-deltas-lede">
             Day B minus Day A: peak days usually run higher load and a shallower
-            midday net-load belly than spring, so evening ramps and flatten BESS
-            power can look very different even with the same EV shape overlay.
+            midday net-load belly than spring, so evening ramps can look very
+            different even with the same EV shape overlay.
           </p>
           <div className="storage-grid compare-delta-grid">
             <div className="storage-card">
@@ -143,15 +135,6 @@ export default function ComparePanel({
                   ? `${deltas.ramp >= 0 ? "+" : ""}${Math.round(deltas.ramp).toLocaleString()} MW/h`
                   : "n/a"}
                 <span>B − A</span>
-              </p>
-            </div>
-            <div className="storage-card">
-              <p className="cost-sublabel">Δ BESS flatten power</p>
-              <p className="cost-big">
-                {deltas.bessPower != null
-                  ? formatSignedGw(deltas.bessPower)
-                  : "n/a"}
-                <span>B − A · same C8 method</span>
               </p>
             </div>
           </div>
@@ -188,14 +171,6 @@ export default function ComparePanel({
                     : "n/a"}
                 </strong>
               </li>
-              <li>
-                BESS (flatten){" "}
-                <strong>
-                  {mildStats.storage
-                    ? `${formatGw(mildStats.storage.powerMw)} / ${formatGwh(mildStats.storage.nameplateEnergyMwh)}`
-                    : "n/a"}
-                </strong>
-              </li>
             </ul>
           </div>
         )}
@@ -217,22 +192,14 @@ export default function ComparePanel({
                     : "n/a"}
                 </strong>
               </li>
-              <li>
-                BESS (flatten){" "}
-                <strong>
-                  {peakStats.storage
-                    ? `${formatGw(peakStats.storage.powerMw)} / ${formatGwh(peakStats.storage.nameplateEnergyMwh)}`
-                    : "n/a"}
-                </strong>
-              </li>
             </ul>
           </div>
         )}
       </div>
       <p className="cost-caveat">
         Hours aligned midnight to 11 p.m. for shape comparison (not the same
-        calendar weather). BESS figures use the same flatten assumptions as the
-        storage panel.
+        calendar weather). Storage flatten estimates live on the Storage route
+        (illustrative C8); not the Compare headline.
       </p>
     </section>
   );
@@ -246,11 +213,9 @@ function formatSignedGw(mw: number): string {
 function dayStats(rows: EvRow[] | null) {
   if (!rows?.length) return null;
   const ramp = computeEveningRamp(rows);
-  const storage = estimateStorageToFlatten(rows);
   return {
     peakLoad: Math.max(...rows.map((r) => r.load_MW)),
     minNet: Math.min(...rows.map((r) => r.net_load_MW)),
     ramp: ramp?.mwPerHour ?? null,
-    storage,
   };
 }

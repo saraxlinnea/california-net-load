@@ -33,11 +33,11 @@ export default function ComparePage() {
   return (
     <div className="page">
       <header className="hero">
-        <h1>Compare grid days</h1>
+        <h1>Compare</h1>
         <p className="lede">
           Put two real CAISO days side by side so spring, summer, and peak
-          conditions are visible at once. Load, net load, evening ramps, and the
-          same storage flatten estimate appear for each day.
+          conditions are visible at once. Load, net load, and evening ramps
+          appear for each day.
         </p>
         <p className="honesty">
           Each day is one CA ISO-TAC sample; differences are not a forecast. EV

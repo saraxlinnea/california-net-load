@@ -8,12 +8,14 @@ type Props = {
   /** Optional large product name on the home hero only */
   productTitle?: string;
   /** What this page (or the site, on home) is about */
-  lede: string;
+  lede?: string;
   /** Optional honesty / caveats under the lede */
   honesty?: string;
   days: DayOption[];
   date: string;
   onDateChange: (date: string) => void;
+  /** When true, day select is omitted (e.g. Adoption places it below the chart) */
+  hideDayControls?: boolean;
   controlsLabel?: string;
   loading?: boolean;
   loadingLabel?: string;
@@ -35,6 +37,7 @@ export default function DeepDiveShell({
   days,
   date,
   onDateChange,
+  hideDayControls = false,
   controlsLabel = "Day controls",
   loading = false,
   loadingLabel = "Loading…",
@@ -49,19 +52,19 @@ export default function DeepDiveShell({
         {productTitle ? (
           <>
             <h1 className="brand">{productTitle}</h1>
-            <p className="lede">{lede}</p>
+            {lede ? <p className="lede">{lede}</p> : null}
             <p className="page-subtitle">{title}</p>
           </>
         ) : (
           <>
             <h1>{title}</h1>
-            <p className="lede">{lede}</p>
+            {lede ? <p className="lede">{lede}</p> : null}
           </>
         )}
         {honesty && <p className="honesty">{honesty}</p>}
       </header>
 
-      {days.length > 0 && (
+      {!hideDayControls && days.length > 0 && (
         <section className="controls" aria-label={controlsLabel}>
           <label className="field">
             <span>Day</span>

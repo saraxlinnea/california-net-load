@@ -40,18 +40,17 @@ Related (not a separate C-id): day generation mix pie on `/` sums CAISO fuel-mix
 
 | UI element | Claim | Label shown |
 |------------|--------|-------------|
-| Net load series on chart | C1 | Strong (footer / sources) |
-| Fleet \(N\), today % LDV | C3, C4 | Strong / Moderate |
-| Peak EV, % of day CAISO energy, peak net+EV | C6 | Weak as forecast; Strong as stress arithmetic |
-| Evening ramp on net+EV | C1 + scaled EV | Strong grid + C6 stress |
-| Ramp relief (managed \(p\)) | C7 | Weak / Speculative |
-| Generation donut | CAISO fuel CSV | Strong (generation-by-fuel); end-use note |
-| EV vs BESS ΔR, \(P_{\text{equiv}}\), peak cut, energy shifted | C7 (+ C8 for flatten ref) | Weak / Speculative; illustrative |
+| Net load + EV chart (default UI) | C1 + C6/C7 stress | Strong grid; Weak as forecast / Strong as arithmetic; C7 illustrative |
+| Fleet presets / today % LDV | C3, C4 | Strong / Moderate |
+| Peak EV + ramp relief key stats | C6, C7 | Stress arithmetic; Weak / Speculative for relief |
+| Shift bridge callout | C7 + C5 echo | Illustrative · Methods link |
+| Generation donut / EV-vs-BESS / ladder | (parked) | Not in default LinkedIn UI; see `local/linkedin-wip.md` |
 
 ### `/charge` (PG&E costs)
 
 | UI element | Claim | Label |
 |------------|--------|--------|
+| Three-clocks callout (ramp / CEC EV / TOU ≠ CAISO) | C1 + timing | Strong ramp; Moderate TOU framing |
 | Duck / net load chart | C1 | Strong |
 | CEC / midday / off-peak schedule costs | C5 | Moderate |
 | $/car·year and $/car·month | C5 + annualization caveat | Moderate; illustrative annualization |
@@ -74,7 +73,8 @@ Related (not a separate C-id): day generation mix pie on `/` sums CAISO fuel-mix
 | UI element | Claim | Label |
 |------------|--------|--------|
 | Side-by-side net load / EV overlay | C1 (+ overlay scale) | Strong grid; EV overlay same as Charge/Adoption assumptions |
-| Day comparison cards | C1 | Strong for each day’s CSV |
+| Day comparison cards (peak / min net / ramp) | C1 | Strong for each day’s CSV |
+| BESS flatten deltas | (demoted) | Not Compare headline; Storage route only (C8 Weak) |
 
 ---
 

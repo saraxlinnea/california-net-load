@@ -55,11 +55,19 @@ a:hover {
   text-decoration: none;
 }
 
+.site-tagline {
+  margin: 0.4rem 0 0;
+  max-width: 36rem;
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
 .site-nav {
   display: flex;
   flex-wrap: wrap;
   gap: 0.35rem 1.25rem;
-  margin-top: 0.9rem;
+  margin-top: 0.85rem;
 }
 
 .site-nav a {
@@ -78,6 +86,88 @@ a:hover {
 
 .site-nav a.active {
   border-bottom-color: var(--accent-2);
+}
+
+.site-nav-more {
+  position: relative;
+  padding-bottom: 0.65rem;
+}
+
+.site-nav-more > summary {
+  list-style: none;
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.site-nav-more > summary::-webkit-details-marker {
+  display: none;
+}
+
+.site-nav-more > summary:hover {
+  color: var(--ink);
+}
+
+.site-nav-more-links {
+  position: absolute;
+  z-index: 5;
+  top: 100%;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 7rem;
+  padding: 0.55rem 0.75rem;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  box-shadow: 0 4px 14px rgba(26, 29, 33, 0.08);
+}
+
+.site-nav-more-links a {
+  padding-bottom: 0;
+  border-bottom: none;
+  font-size: 0.88rem;
+}
+
+.more-charts {
+  margin: 1.5rem 0 0;
+  padding: 0.85rem 0 0;
+  border-top: 1px solid var(--line);
+}
+
+.more-charts > summary {
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 550;
+  color: var(--muted);
+}
+
+.more-charts > summary:hover {
+  color: var(--ink);
+}
+
+.more-charts[open] > summary {
+  margin-bottom: 1rem;
+  color: var(--ink);
+}
+
+.more-metrics {
+  margin: 0.75rem 0 0;
+}
+
+.more-metrics > summary {
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.more-metrics > summary:hover {
+  color: var(--ink);
+}
+
+.more-metrics[open] > summary {
+  margin-bottom: 0.75rem;
+  color: var(--ink);
 }
 
 .site-footer {
@@ -116,33 +206,50 @@ a:hover {
 .brand {
   margin: 0 0 0.35rem;
   font-family: "Fraunces", "Times New Roman", serif;
-  font-size: clamp(2.4rem, 5vw, 3.4rem);
+  font-size: clamp(2.85rem, 6.5vw, 4.1rem);
   font-weight: 600;
-  letter-spacing: -0.03em;
-  line-height: 1;
+  letter-spacing: -0.035em;
+  line-height: 0.98;
   color: var(--ink);
 }
 
 .hero-home .brand {
-  margin-bottom: 0.65rem;
+  margin-bottom: 0.75rem;
 }
 
 .hero h1 {
   margin: 0;
-  font-size: clamp(1.35rem, 2.6vw, 1.75rem);
-  font-weight: 600;
+  font-size: clamp(1.1rem, 2vw, 1.35rem);
+  font-weight: 500;
   font-family: "Fraunces", "Times New Roman", serif;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.015em;
+  color: var(--muted);
+}
+
+.adoption-key-stats {
+  margin: 1rem 0 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.adoption-key-stats strong {
   color: var(--ink);
+  font-weight: 600;
 }
 
 .hero-home .page-subtitle {
   margin: 0.85rem 0 0;
   max-width: 42rem;
-  font-size: clamp(1.05rem, 2.2vw, 1.25rem);
+  font-size: clamp(1.02rem, 2vw, 1.2rem);
   font-weight: 500;
   color: var(--ink);
   line-height: 1.35;
+}
+
+.hero-home .lede {
+  max-width: 44rem;
+  font-size: 1.05rem;
+  color: var(--ink);
 }
 
 .lede {
@@ -297,6 +404,23 @@ a:hover {
   border-color: var(--muted);
 }
 
+.adoption-chart-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin: 0.75rem 0 0.35rem;
+}
+
+.shift-preset.chip-active {
+  border-color: var(--ink);
+  background: rgba(26, 29, 33, 0.06);
+}
+
+.shift-preset:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 .scenario {
   grid-column: span 2;
 }
@@ -419,6 +543,17 @@ a:hover {
   margin: 0 0 0.45rem;
   font-weight: 600;
   color: var(--ink);
+}
+
+.callout-claims {
+  margin: 0.45rem 0 0;
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+
+.callout-echo .callout-headline {
+  font-size: 1rem;
+  font-weight: 550;
 }
 
 .callout p {

@@ -66,7 +66,7 @@ export default function FuelPage() {
 
   return (
     <DeepDiveShell
-      title="Fuel mix and emissions"
+      title="Fuel"
       lede="See how this CAISO day’s hourly generation mix drives operational stack carbon intensity (lb CO₂/MWh). The fuel stack and CI line update with the selected day."
       honesty="Imports use an EPA eGRID CAMX annual proxy, not hourly import mix. Batteries count discharge only in the CI denominator."
       days={days}

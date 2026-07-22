@@ -3,14 +3,15 @@ import { PROVENANCE } from "./provenance";
 import { shareSearchString } from "./shareState";
 import "./App.css";
 
-const NAV_ITEMS = [
+const PRIMARY_NAV = [
   { to: "/", label: "Adoption" },
   { to: "/charge", label: "Cost" },
-  { to: "/fuel", label: "Fuel" },
-  { to: "/storage", label: "Storage" },
   { to: "/compare", label: "Compare" },
   { to: "/methods", label: "Methods" },
 ] as const;
+
+const SITE_TAGLINE =
+  "Real CAISO days, EV charging timing, and PG&E per-car costs in one place.";
 
 export default function Layout() {
   const [searchParams] = useSearchParams();
@@ -22,8 +23,9 @@ export default function Layout() {
         <NavLink className="site-brand" to={`/${qs}`}>
           California Net Load
         </NavLink>
+        <p className="site-tagline">{SITE_TAGLINE}</p>
         <nav className="site-nav" aria-label="Primary">
-          {NAV_ITEMS.map(({ to, label }) => (
+          {PRIMARY_NAV.map(({ to, label }) => (
             <NavLink
               key={to}
               to={`${to === "/" ? "/" : to}${qs}`}
@@ -42,7 +44,7 @@ export default function Layout() {
         <p>
           Sources verified as of <strong>{PROVENANCE.verifiedAsOf}</strong>
           {" · "}
-          <NavLink to={`/methods${qs}`}>Math + Citations</NavLink>
+          <NavLink to={`/methods${qs}`}>Methods</NavLink>
         </p>
       </footer>
     </div>

@@ -71,7 +71,7 @@ export default function StoragePanel({ rows, date }: Props) {
       ...base,
       title: {
         text: `Storage flatten path (${date})`,
-        font: { size: 13, color: PLOTLY_MUTED },
+        font: { size: 14 },
         x: 0,
         xanchor: "left",
       },
@@ -87,7 +87,7 @@ export default function StoragePanel({ rows, date }: Props) {
       },
       yaxis: {
         ...base.yaxis,
-        title: { text: "MW", font: { size: 11, color: PLOTLY_MUTED } },
+        title: { text: "Charge / discharge (MW)", font: { size: 11, color: PLOTLY_MUTED } },
         rangemode: "tozero",
       },
     };

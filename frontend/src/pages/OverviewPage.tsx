@@ -10,10 +10,10 @@ import {
   yMaxForShapes,
 } from "../chartConfig";
 import {
-  bestPlanSavings,
-  buildEvTimingInsight,
   buildShiftBridgeCallout,
+  buildThreeClocksCallout,
   computeCostComparison,
+  middayVsCecSavings,
   computeEveningRamp,
 } from "../insights";
 import { loadAvailableDays, loadEvTimeseries, loadTouRates } from "../loadData";
@@ -124,23 +124,27 @@ export default function OverviewPage() {
     }
     return {
       data: traces,
-      layout: buildLayout(shapes, toggles.showTouRates, annotations),
+      layout: {
+        ...buildLayout(shapes, toggles.showTouRates, annotations),
+        title: {
+          text: "Net load, EV charging, and PG&E TOU",
+          font: { size: 14 },
+          x: 0,
+          xanchor: "left" as const,
+        },
+        margin: {
+          t: 56,
+          r: toggles.showTouRates ? 64 : 24,
+          b: 52,
+          l: 60,
+        },
+      },
     };
   }, [rows, state, toggles, touRows]);
 
-  const timingInsight = useMemo(
-    () =>
-      rows
-        ? buildEvTimingInsight(
-            rows,
-            state.scenario,
-            state.mode,
-            state.date,
-            state.plan,
-            touRows,
-          )
-        : null,
-    [rows, state, touRows],
+  const threeClocks = useMemo(
+    () => (rows ? buildThreeClocksCallout(rows, state.scenario) : null),
+    [rows, state.scenario],
   );
 
   const costs = useMemo(
@@ -173,37 +177,52 @@ export default function OverviewPage() {
 
   const shiftBridge = useMemo(() => {
     if (!shiftStress) return null;
-    const savings = costs ? bestPlanSavings(costs) : null;
+    const savings = costs ? middayVsCecSavings(costs) : null;
     return buildShiftBridgeCallout({
-      rampUnmanagedMwPerHour: shiftStress.at0.ramp?.mwPerHour ?? null,
-      rampAtParticipateMwPerHour: shiftStress.atP.ramp?.mwPerHour ?? null,
       rampReliefMwPerHour: shiftStress.atP.rampRelief,
       participate: state.participate,
       savingsYearlyPerCar: savings?.savingsYearlyPerCar ?? 0,
       savingsPlan: savings?.plan ?? state.plan,
-      savingsAltLabel: savings?.altLabel ?? "a cheaper schedule",
     });
   }, [shiftStress, costs, state.participate, state.plan]);
 
   return (
     <div className="page">
       <header className="hero">
-        <h1>Shift charging hours to cut PG&E $/car</h1>
+        <h1>Cost</h1>
         <p className="lede">
-          Same daily kWh on EV2-A or EV-B; only the hours change. Midday or
-          off-peak schedules can lower energy charges versus unmanaged CEC. For
-          evening-ramp strain as adoption rises, use{" "}
+          Move the same daily kWh into midday or off-peak hours on PG&E EV2-A or
+          EV-B. For fleet scale and evening ramp, use{" "}
           <Link to={`/${qs}`}>Adoption</Link>.
         </p>
       </header>
 
+      {threeClocks && (
+        <aside
+          className="callout callout-honesty"
+          aria-label="Three clocks: ramp, EV timing, TOU"
+        >
+          <p className="callout-headline">{threeClocks.headline}</p>
+          <p>{threeClocks.detail}</p>
+          <p className="callout-claims">
+            C1 Strong (CAISO ramp) · CEC timing Moderate · TOU ≠ CAISO peaks ·{" "}
+            <Link to={`/methods${qs}`}>Methods</Link>
+          </p>
+        </aside>
+      )}
+
       {shiftBridge && (
         <aside
-          className="callout callout-honesty callout-share"
-          aria-label="Shift charging bridge"
+          className="callout callout-honesty callout-share callout-echo"
+          aria-label="Shift charging echo"
         >
-          <p className="callout-headline">{shiftBridge.headline}</p>
-          <p>{shiftBridge.detail}</p>
+          <p className="callout-headline">{shiftBridge.echo}</p>
+          <p className="callout-claims">
+            Full line on <Link to={`/${qs}`}>Adoption</Link>
+            {" · "}
+            C7 illustrative grid · C5 moderate cost ·{" "}
+            <Link to={`/methods${qs}`}>Methods</Link>
+          </p>
         </aside>
       )}
 
@@ -236,12 +255,6 @@ export default function OverviewPage() {
           chargingMode={state.mode}
           vehicleCount={state.cars}
         />
-      )}
-
-      {timingInsight && toggles.showEv && (
-        <aside className="callout" aria-live="polite">
-          <p>{timingInsight.text}</p>
-        </aside>
       )}
     </div>
   );

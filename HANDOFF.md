@@ -22,16 +22,17 @@ in place for a shippable viewer plus an honest PG&E-only cost calculator.
 2. `plot_duck_curve.py` / `ev_load_overlay.py` · static PNG pipeline
 3. `data/processed/tou_rates_pge.csv` · PG&E EV2-A and EV-B (re-verified 2026-07-20 PASS)
 4. `frontend/` · React + Plotly, multi-page nav:
-   - `/` Adoption (home) · product thesis: shift charging to ease evening
-     ramp strain; bills can align on PG&E. Shared shift bridge (ramp relief +
-     $/car savings); “Show the shift” preset; Pages guide after first chart
-   - `/charge` (nav: Cost) · shift schedules for PG&E $/car; same bridge
-     callout; points to Adoption for ramp
-   - `/fuel` · fuel-mix stack + CI + midday/evening share bars
-   - `/storage` · flatten estimate cards + charge/discharge path chart
-   - `/compare` · side-by-side days with Δ peak / min net / ramp / BESS
-   - `/methods` · Math + Citations (formulas, Confirmed vs Unverified)
-   - `/adoption` redirects to `/`
+   - Primary nav: Adoption, Cost, Compare, Methods (Fuel/Storage unlinked)
+   - Site tagline in Layout header on every page
+   - `/` Adoption · chart-first net+EV + chips + bridge + controls; speculative
+     charts parked (see gitignored `local/linkedin-wip.md`)
+   - `/charge` (Cost) · three-clocks callout (ramp / CEC EV / TOU ≠ CAISO) +
+     PG&E schedule $/car
+   - `/compare` · side-by-side days (BESS flatten demoted off Compare headline)
+   - `/methods` · citations
+   - `/fuel`, `/storage` · routes live, not in nav
+   - GitHub Pages: Vite base `/california-net-load/`; workflow
+     `.github/workflows/pages.yml` (enable Pages → GitHub Actions once)
    - Layout footer: verified-as-of + Methods link; `index.html` share meta
      (OG/Twitter summary; no og:image until a checked-in asset exists)
    - Per-car cost with **$/year and $/month** primary; PG&E PDF + EV plan links

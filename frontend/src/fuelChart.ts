@@ -98,10 +98,16 @@ export function buildCarbonIntensityTrace(
 
 export function buildFuelLayout(showCi: boolean): Partial<Layout> {
   const base = basePlotlyLayout({
-    margin: { t: 40, r: showCi ? 72 : 24, b: 52, l: 60 },
+    margin: { t: 56, r: showCi ? 72 : 24, b: 52, l: 60 },
   });
   const layout: Partial<Layout> = {
     ...base,
+    title: {
+      text: "Hourly generation mix and carbon intensity",
+      font: { size: 14 },
+      x: 0,
+      xanchor: "left",
+    },
     xaxis: {
       ...base.xaxis,
       title: { text: "Hour (US/Pacific)", font: { size: 11, color: PLOTLY_MUTED } },
@@ -243,16 +249,23 @@ export function buildMiddayEveningShareLayout(
   date: string,
 ): Partial<Layout> {
   const base = basePlotlyLayout({
-    margin: { t: 48, r: 24, b: 48, l: 56 },
+    margin: { t: 56, r: 24, b: 48, l: 56 },
   });
   return {
     ...base,
     barmode: "stack",
     title: {
       text: `Midday vs evening generation share (${date})`,
-      font: { size: 13, color: PLOTLY_MUTED },
+      font: { size: 14 },
       x: 0,
       xanchor: "left",
+    },
+    xaxis: {
+      ...base.xaxis,
+      title: {
+        text: "Period",
+        font: { size: 11, color: PLOTLY_MUTED },
+      },
     },
     yaxis: {
       ...base.yaxis,

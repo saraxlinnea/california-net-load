@@ -10,9 +10,12 @@ import OverviewPage from "./pages/OverviewPage";
 import StoragePage from "./pages/StoragePage";
 import "./index.css";
 
+/** Vite base ends with /; React Router basename should not. */
+const basename = import.meta.env.BASE_URL.replace(/\/$/, "") || "/";
+
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <BrowserRouter>
+    <BrowserRouter basename={basename === "/" ? undefined : basename}>
       <Routes>
         <Route element={<Layout />}>
           <Route index element={<AdoptionPage />} />

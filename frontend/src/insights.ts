@@ -294,75 +294,120 @@ export function buildThreeClocksCallout(
 }
 
 export type ShiftBridgeInput = {
-  /** Unmanaged (p=0) ramp rate on net+EV, MW/h */
-  rampUnmanagedMwPerHour: number | null;
-  /** Ramp rate at current participate, MW/h */
-  rampAtParticipateMwPerHour: number | null;
   /** Unmanaged minus mixed (existing adoptionStress rampRelief) */
   rampReliefMwPerHour: number;
   participate: number;
-  /** Best schedule savings vs CEC from computeCostComparison */
+  /** Midday-vs-CEC yearly $/car from computeCostComparison (prefer EV2-A) */
   savingsYearlyPerCar: number;
   savingsPlan: string;
-  savingsAltLabel: string;
+};
+
+export type ShiftBridgeCallout = {
+  /** LinkedIn-style arrow sentence (or prompt when p = 0) */
+  sentence: string;
+  /** Short echo for /charge */
+  echo: string;
+  participatePct: number;
+  rampReliefMwPerHour: number;
+  savingsYearlyPerCar: number;
+  plan: string;
+  hasRelief: boolean;
+  hasSavings: boolean;
 };
 
 /**
- * Product bridge: same kWh / different hours; ramp relief + PG&E $/car.
- * Reuses existing rampRelief and cost-comparison savings only.
+ * Product bridge: one LinkedIn sentence from existing rampRelief + midday-vs-CEC.
+ * No new rate or ramp formulas.
  */
 export function buildShiftBridgeCallout(
   input: ShiftBridgeInput,
-): { headline: string; detail: string } {
+): ShiftBridgeCallout {
   const pct = Math.round(input.participate * 100);
   const relief = Math.round(input.rampReliefMwPerHour);
   const hasRelief = input.rampReliefMwPerHour > 0;
   const hasSavings = input.savingsYearlyPerCar > 0;
+  const plan = input.savingsPlan;
+  const dollars = formatDollars(input.savingsYearlyPerCar);
 
-  const headline =
-    "Same kWh, different hours: shifting charge time can ease evening grid strain and can cut PG&E $/car.";
-
-  const parts: string[] = [];
-  if (hasRelief) {
-    parts.push(
-      `At ${pct}% shifted to midday in this model, evening ramp relief is about ${relief.toLocaleString()} MW/h versus unmanaged CEC (illustrative).`,
-    );
-  } else if (input.rampUnmanagedMwPerHour != null) {
-    parts.push(
-      `Unmanaged evening climb is about ${Math.round(input.rampUnmanagedMwPerHour).toLocaleString()} MW/h on net+EV; raise the midday shift share on Adoption to see relief in this model.`,
-    );
-  }
-  if (hasSavings) {
-    parts.push(
-      `On ${input.savingsPlan}, moving the same daily kWh into ${input.savingsAltLabel} saves about ${formatDollars(input.savingsYearlyPerCar)}/car·year versus unmanaged CEC (energy charges only).`,
-    );
+  let sentence: string;
+  if (pct <= 0) {
+    sentence =
+      "Set % of charging shifted to midday (or Show the shift) to see evening ramp relief and PG&E midday-vs-CEC $/car·year together.";
+  } else if (hasRelief && hasSavings) {
+    sentence = `Shift ${pct}% of charging to midday → ramp eases by ${relief.toLocaleString()} MW/h → saves ~${dollars}/car·year on PG&E ${plan}.`;
+  } else if (hasRelief) {
+    sentence = `Shift ${pct}% of charging to midday → ramp eases by ${relief.toLocaleString()} MW/h in this model. On PG&E ${plan} for this season day, midday does not beat unmanaged CEC on $/car·year.`;
+  } else if (hasSavings) {
+    sentence = `Shift ${pct}% of charging to midday → evening ramp relief is about 0 MW/h at this fleet → still saves ~${dollars}/car·year on PG&E ${plan} (midday vs CEC).`;
   } else {
-    parts.push(
-      "On these PG&E EV plans for this season day, CEC’s night-heavy shape is already near the cheapest hours; midday may not cut $/car much.",
-    );
+    sentence = `At ${pct}% shifted to midday, this day and fleet show little ramp relief and little midday-vs-CEC $/car savings on PG&E ${plan}.`;
   }
-  parts.push(
-    "PG&E TOU windows are territory retail rates; they are not CAISO system peak hours.",
-  );
 
-  return { headline, detail: parts.join(" ") };
+  const echo =
+    hasRelief && hasSavings
+      ? `Shift ${pct}% midday → ${relief.toLocaleString()} MW/h ramp relief → ~${dollars}/car·year on PG&E ${plan}.`
+      : sentence;
+
+  return {
+    sentence,
+    echo,
+    participatePct: pct,
+    rampReliefMwPerHour: relief,
+    savingsYearlyPerCar: input.savingsYearlyPerCar,
+    plan,
+    hasRelief,
+    hasSavings,
+  };
 }
 
-/** Pick the plan row with the largest yearly $/car savings vs CEC. */
+/**
+ * Midday-vs-CEC yearly $/car: prefer EV2-A, else the plan with the largest
+ * midday savings (existing computeCostComparison shapes only).
+ */
+export function middayVsCecSavings(
+  costs: CostComparison,
+  preferPlan: TouPlan = "EV2-A",
+): { plan: string; savingsYearlyPerCar: number } {
+  const preferred =
+    costs.byPlan.find((row) => row.plan === preferPlan) ?? costs.byPlan[0];
+  const middaySave = (row: PlanCostRow) =>
+    row.cec.yearlyDollarsPerVehicle - row.midday.yearlyDollarsPerVehicle;
+
+  let best = preferred;
+  let bestSave = middaySave(preferred);
+  for (const row of costs.byPlan) {
+    const save = middaySave(row);
+    if (save > bestSave) {
+      best = row;
+      bestSave = save;
+    }
+  }
+  // Prefer EV2-A when it has positive midday savings
+  const preferredSave = middaySave(preferred);
+  if (preferredSave > 0) {
+    return {
+      plan: preferred.plan,
+      savingsYearlyPerCar: preferredSave,
+    };
+  }
+  return {
+    plan: best.plan,
+    savingsYearlyPerCar: Math.max(0, bestSave),
+  };
+}
+
+/** @deprecated Prefer middayVsCecSavings for the LinkedIn bridge. */
 export function bestPlanSavings(costs: CostComparison): {
   plan: string;
   altLabel: string;
   savingsYearlyPerCar: number;
 } {
-  const row = costs.byPlan.reduce(
-    (best, next) =>
-      next.savingsYearlyPerCar > best.savingsYearlyPerCar ? next : best,
-    costs.byPlan[0],
-  );
-  const bestShape = row.bestAlt === "midday" ? row.midday : row.offpeak;
+  const mid = middayVsCecSavings(costs);
+  const row =
+    costs.byPlan.find((r) => r.plan === mid.plan) ?? costs.byPlan[0];
   return {
-    plan: row.plan,
-    altLabel: bestShape.label,
-    savingsYearlyPerCar: row.savingsYearlyPerCar,
+    plan: mid.plan,
+    altLabel: row.midday.label,
+    savingsYearlyPerCar: mid.savingsYearlyPerCar,
   };
 }

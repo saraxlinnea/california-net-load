@@ -15,8 +15,72 @@ export const DEFAULT_PLAN: TouPlan = "EV2-A";
 export const DEFAULT_MODE: ChargingMode = "cec";
 export const DEFAULT_PEAK = "2025-08-21";
 export const DEFAULT_PARTICIPATE = 0;
-/** One-click Adoption preset: half of daily energy on midday managed shape */
+/** One-click “Show the shift” midday share */
 export const SHOW_SHIFT_PARTICIPATE = 0.5;
+/** Strong duck-curve day for the shareable shift preset */
+export const SHOW_SHIFT_DATE = "2025-04-18";
+export const SHOW_SHIFT_DATE_FALLBACK = "2025-08-21";
+
+/** Clean shareable state for the LinkedIn shift demo. */
+export function showShiftSharePatch(days: DayOption[]): Partial<ShareState> {
+  const prefer = [SHOW_SHIFT_DATE, SHOW_SHIFT_DATE_FALLBACK];
+  const date =
+    prefer.find((d) => days.some((day) => day.date === d)) ??
+    days[0]?.date ??
+    SHOW_SHIFT_DATE;
+  return {
+    date,
+    scenario: DEFAULT_SCENARIO,
+    plan: DEFAULT_PLAN,
+    mode: "managed",
+    cars: 1,
+    peak: DEFAULT_PEAK,
+    participate: SHOW_SHIFT_PARTICIPATE,
+    scale: 1,
+    adoption: todayAdoptionShare() ?? defaultAdoption(),
+  };
+}
+
+/** 50% CA LDV + 50% midday shift on the same LinkedIn day (atomic URL). */
+export function halfLdvShiftSharePatch(days: DayOption[]): Partial<ShareState> {
+  const base = showShiftSharePatch(days);
+  let scale: number | null = null;
+  try {
+    if (hasLdvTotal()) scale = resolveFleetFromAdoption(0.5).scale;
+  } catch {
+    scale = null;
+  }
+  return {
+    ...base,
+    adoption: 0.5,
+    scale,
+    participate: SHOW_SHIFT_PARTICIPATE,
+    mode: "managed",
+  };
+}
+
+/** Canonical query string for a full share state (LinkedIn CTA docs). */
+export function buildShareQuery(state: ShareState): string {
+  const params = applyShareState(new URLSearchParams(), state);
+  const s = params.toString();
+  return s ? `?${s}` : "";
+}
+
+/** Resolved Show-the-shift state for a day library (stable CTA URL). */
+export function showShiftShareState(days: DayOption[]): ShareState {
+  const patch = showShiftSharePatch(days);
+  return {
+    date: patch.date ?? SHOW_SHIFT_DATE,
+    scenario: patch.scenario ?? DEFAULT_SCENARIO,
+    plan: patch.plan ?? DEFAULT_PLAN,
+    mode: patch.mode ?? "managed",
+    cars: patch.cars ?? 1,
+    peak: patch.peak ?? DEFAULT_PEAK,
+    adoption: patch.adoption ?? defaultAdoption(),
+    scale: patch.scale ?? 1,
+    participate: patch.participate ?? SHOW_SHIFT_PARTICIPATE,
+  };
+}
 
 export const SCENARIOS: Scenario[] = ["low", "mid", "high"];
 export const PLANS: TouPlan[] = ["EV2-A", "EV-B"];

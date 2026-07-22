@@ -36,3 +36,6 @@ ev_overlay_*.png
 # Optional local caches
 .cache/
 *.log
+
+# Local notes (not for commit / LinkedIn WIP parking)
+local/

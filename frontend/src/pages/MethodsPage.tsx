@@ -14,12 +14,10 @@ export default function MethodsPage() {
   return (
     <div className="page methods-page">
       <header className="hero">
-        <h1>Math + Citations</h1>
+        <h1>Methods</h1>
         <p className="lede">
-          How California Net Load computes chart and cost numbers, and which
-          sources are Confirmed versus Unverified. Plain-language formulas cover
-          net load, EV overlay, adoption stress, and TOU cost, with linked
-          citations.
+          How the charts and PG&E $/car numbers are computed, and which sources
+          are Confirmed versus Unverified.
         </p>
         <p className="honesty">
           Summarizes <code>MATH.md</code>, <code>BENCHMARKS.md</code>, and{" "}

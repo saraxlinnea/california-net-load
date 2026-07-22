@@ -66,14 +66,20 @@ export function buildCompareTraces(
 
 export function buildCompareLayout(): Partial<Layout> {
   const base = basePlotlyLayout({
-    margin: { t: 40, r: 24, b: 48, l: 60 },
+    margin: { t: 56, r: 24, b: 48, l: 60 },
   });
   return {
     ...base,
+    title: {
+      text: "Two CAISO days: total load and net load",
+      font: { size: 14 },
+      x: 0,
+      xanchor: "left",
+    },
     xaxis: {
       ...base.xaxis,
       title: {
-        text: "Hour of day (aligned)",
+        text: "Hour of day (US/Pacific, aligned)",
         font: { size: 11, color: PLOTLY_MUTED },
       },
     },

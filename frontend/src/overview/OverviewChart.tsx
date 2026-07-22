@@ -35,12 +35,11 @@ export default function OverviewChart({
       )}
       <div className="chart-copy">
         <p className="chart-narrative">
-          One California day (24 hourly points, US/Pacific). Demand often peaks
-          in the early evening; on these summer days total load peaks around 6
-          p.m., while net load peaks later as solar drops. On PG&E EV plans,
-          peak prices fall in that evening window, so charging then costs more.
-          Switch the charging schedule to move the same daily energy into midday
-          solar or off-peak hours.
+          One California day (24 hourly points, US/Pacific). Demand often rises
+          into the early evening; net load usually climbs later as solar drops.
+          On PG&E EV plans, peak prices fall in the evening window, so charging
+          then costs more. Switch the charging schedule to move the same daily
+          energy into midday solar or off-peak hours.
         </p>
         <p className="chart-identity">
           Net load = total load − solar − wind. Gold and blue fill the gap
