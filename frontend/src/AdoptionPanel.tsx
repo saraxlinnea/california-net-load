@@ -292,9 +292,11 @@ export default function AdoptionPanel({
 
       <section
         className="chart-block chart-panel-tall"
-        aria-label="Unmanaged versus shifted charging"
+        aria-label="24 hours of CAISO grid demand, with shifted versus unshifted EV charging"
       >
-        <h2 className="chart-block-title">Unmanaged vs shifted charging</h2>
+        <h2 className="chart-block-title">
+          24 Hours of CAISO Grid Demand, With Shifted vs. Unshifted EV Charging
+        </h2>
         <AnimatedPlot
           key={date}
           data={chart.data}

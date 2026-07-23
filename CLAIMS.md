@@ -49,7 +49,7 @@ Related (not a C-id; **not** a C6/C7/C8 upgrade): **CEC 2025 IEPR demand forecas
 
 | UI element | Claim | Label shown |
 |------------|--------|-------------|
-| Unmanaged vs shifted charging chart (default UI) | C1 + C6/C7 stress | Strong grid; Weak as forecast / Strong as arithmetic; C7 illustrative. Two nets at same fleet N: unmanaged CEC vs shifted mix on EV-removed baseline (net − ev_CEC(N0) + full fleet); green = full-fleet charging (same daily E); not with-vs-without EVs |
+| 24 Hours of CAISO Grid Demand, With Shifted vs. Unshifted EV Charging (default UI) | C1 + C6/C7 stress | Strong grid; Weak as forecast / Strong as arithmetic; C7 illustrative. Two nets at same fleet N: unmanaged CEC vs shifted mix on EV-removed baseline (net − ev_CEC(N0) + full fleet); green = full-fleet charging (same daily E); not with-vs-without EVs |
 | Fleet presets / today % LDV | C3, C4 | Strong / Moderate |
 | Peak EV + ramp relief key stats | C6, C7 | Stress arithmetic on full-fleet series (unmanaged vs mix ramp); Weak / Speculative for relief |
 | Shift bridge callout | C7 and C5 as separate labeled blocks | Illustrative grid · Moderate cost · Methods |
