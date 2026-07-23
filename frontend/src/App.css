@@ -355,6 +355,70 @@ button:focus-visible {
   line-height: 1.35;
 }
 
+.controls-lead {
+  margin: 0 0 0.35rem;
+  max-width: var(--content-width);
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.35;
+}
+
+.controls-framing {
+  margin: 0 0 0.45rem;
+  max-width: var(--content-width);
+}
+
+.controls-framing-summary {
+  list-style: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+  font-size: 0.84rem;
+  font-weight: 500;
+  color: var(--muted);
+  line-height: 1.3;
+}
+
+.controls-framing-summary::-webkit-details-marker {
+  display: none;
+}
+
+.controls-framing-summary::after {
+  content: "";
+  width: 0.35rem;
+  height: 0.35rem;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(45deg);
+  margin-top: -0.15rem;
+  opacity: 0.75;
+}
+
+.controls-framing[open] .controls-framing-summary {
+  color: var(--ink);
+}
+
+.controls-framing[open] .controls-framing-summary::after {
+  transform: rotate(-135deg);
+  margin-top: 0.15rem;
+}
+
+.controls-framing-summary:hover {
+  color: var(--ink);
+}
+
+.controls-framing-body {
+  margin: 0.4rem 0 0.55rem;
+  max-width: 42rem;
+  font-size: 0.88rem;
+  font-weight: 400;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
 .controls-adoption {
   gap: 0.4rem 0.85rem;
   padding: 0.55rem 0.75rem 0.65rem;

@@ -288,8 +288,6 @@ export default function AdoptionPanel({
 
   return (
     <section className="adoption-panel" aria-label="Fleet and charging on a CAISO day">
-      <p className="page-intro-line">{PAGE_INTRO}</p>
-
       <section
         className="chart-block chart-panel-tall"
         aria-label="24 hours of CAISO grid demand, with shifted versus unshifted EV charging"
@@ -309,8 +307,8 @@ export default function AdoptionPanel({
             {Math.round(result.fleetN).toLocaleString()} vehicles, shown
             unmanaged (today&apos;s real charging pattern) versus shifted{" "}
             {Math.round(result.participate * 100)}% into the grid&apos;s
-            lowest-strain hours. Shows how much the peak eases from timing
-            alone, not from using less energy.
+            lowest-strain hours. The difference in peak height comes entirely
+            from timing, not from using less energy.
           </p>
           <p className="chart-sources">
             {HONESTY} <Link to={`/methods${qs}`}>Methods</Link>
@@ -319,6 +317,13 @@ export default function AdoptionPanel({
       </section>
 
       <div className="controls-adoption-wrap">
+        <p className="controls-lead">{PAGE_INTRO}</p>
+        <details className="controls-framing">
+          <summary className="controls-framing-summary">How this works</summary>
+          <p className="controls-framing-body">
+            {HONESTY} <Link to={`/methods${qs}`}>Methods</Link>
+          </p>
+        </details>
         {days.length > 0 && (
           <label className="controls-day-tab">
             <span className="controls-day-tab-label">Day:</span>
