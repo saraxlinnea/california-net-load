@@ -22,17 +22,17 @@ in place for a shippable viewer plus an honest PG&E-only cost calculator.
 2. `plot_duck_curve.py` / `ev_load_overlay.py` · static PNG pipeline
 3. `data/processed/tou_rates_pge.csv` · PG&E EV2-A and EV-B (re-verified 2026-07-20 PASS)
 4. `frontend/` · React + Plotly, multi-page nav:
-   - Primary nav: Adoption, Cost, Fuel, Compare (story, left); Methods (reference, right). Storage unlinked.
+   - Primary nav: Fleet, Fuel, Compare (story, left); Methods (reference, right).
+     Cost (`/charge`) and Storage parked/unlinked; see `AGENTS.md` Parked.
    - Site tagline in Layout header on every page
-   - `/` Adoption · hero + chart-first net+EV + chips + split C5/C7 bridge +
+   - `/` Fleet · hero + chart-first net+EV + chips + split C5/C7 bridge +
      ACC II sales-vs-fleet note; speculative charts parked
      (see gitignored `local/linkedin-wip.md`)
-   - `/charge` (Cost page module `CostPage.tsx`) · three-clocks callout
-     (ramp / CEC EV / TOU ≠ CAISO) + PG&E schedule $/car; Plotly mode bar
-     hidden; dense legend on the right
+   - `/charge` (Cost page module `CostPage.tsx`) · parked: deep route kept,
+     not in nav; three-clocks + PG&E schedule $/car when re-enabled
    - `/fuel` · fuel-mix stack + CI (in primary nav)
    - `/compare` · side-by-side days (BESS flatten demoted off Compare headline)
-   - `/methods` · citations
+   - `/methods` · formulas, assumptions, citations
    - `/storage` · route live, not in nav
    - GitHub Pages: Vite base `/california-net-load/`; workflow
      `.github/workflows/pages.yml` (enable Pages → GitHub Actions once)
@@ -50,8 +50,9 @@ in place for a shippable viewer plus an honest PG&E-only cost calculator.
 6. Adoption stress-test denominator frozen: CEC LDV on-road stock
    \(N_{\text{LDV}} = 29{,}657{,}259\) (data as of 2025-12-31; verified 2026-07-22).
    AFDC baseline \(N_0 = 1{,}981{,}000\). Math in `adoptionStress.ts`.
-   When \(N > N_0\), chart EV is incremental (total − baseline); at \(N_0\),
-   counterfactual with double-count honesty. Claim labels C1–C9 in `CLAIMS.md`.
+   Fleet chart: EV-removed net + full fleet as unmanaged vs shifted mix
+   (same daily E(N)); not incremental / with-vs-without EVs. Claim labels
+   C1–C9 in `CLAIMS.md`.
 7. Data centers: Confirmed CEC peak-share (~1,000 MW / ~2% of CAISO peak,
    early 2026) and CEC ~2040 forecast (~4,500 MW / ~9%) remain in
    `BENCHMARKS.md` + `provenance.ts` for other callouts. Fleet’s EV vs

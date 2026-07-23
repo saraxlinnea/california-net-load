@@ -254,9 +254,14 @@ export const PROVENANCE = {
     },
     peakDriverFinding:
       "EV charging (transportation electrification), not AI data centers, is the largest projected driver of CAISO peak demand growth through 2045",
+    /** Site StatBubble primary label (Planning scenario framing). */
+    planningScenarioPeakRiseLabel: "~42%",
+    planningScenarioPeakRiseNote:
+      "Planning scenario: CAISO peak demand rise by ~2045 versus today, mostly from EVs (~42% net growth framing aligned with the Fleet driver breakdown). Distinct from the higher Local Reliability + Known Loads path (~61%).",
+    /** Secondary / caption only; not the header bubble value. */
     highScenarioPeakRiseLabel: "Up to 61%",
     highScenarioPeakRiseNote:
-      "High scenario: CAISO peak demand rise by ~2045, mostly from EVs (as reported for the adopted forecast; re-check vs CED 2025 Peak Forecast tables for primary)",
+      "Local Reliability + Known Loads (higher) scenario: CAISO peak demand rise by ~2045, mostly from EVs (as reported for the adopted forecast; re-check vs CED 2025 Peak Forecast tables for primary).",
     dataCenterUpwardRevisionNote:
       "Data-center component of the same CEC forecast was revised upward shortly before adoption (CEC DAWG update listed on the demand-side page, Jan 5, 2026). The EV-larger-than-data-centers finding already reflects that higher data-center estimate.",
     dawgUpdateLabel:

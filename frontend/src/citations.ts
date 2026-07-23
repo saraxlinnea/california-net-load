@@ -102,7 +102,7 @@ function buildCitation(id: CitationId, n: number): Citation {
         id,
         n,
         title: PROVENANCE.ieprDemandForecast.name,
-        detail: `Adopted ${PROVENANCE.ieprDemandForecast.adopted}. ${PROVENANCE.ieprDemandForecast.peakDriverFinding}. UI label "${PROVENANCE.ieprDemandForecast.highScenarioPeakRiseLabel}": ${PROVENANCE.ieprDemandForecast.highScenarioPeakRiseNote}. ${PROVENANCE.ieprDemandForecast.dataCenterUpwardRevisionNote} ${PROVENANCE.ieprDemandForecast.strengthLabel}. Retrieved ${PROVENANCE.ieprDemandForecast.retrievedAsOf}.`,
+        detail: `Adopted ${PROVENANCE.ieprDemandForecast.adopted}. ${PROVENANCE.ieprDemandForecast.peakDriverFinding}. UI label "${PROVENANCE.ieprDemandForecast.planningScenarioPeakRiseLabel}": ${PROVENANCE.ieprDemandForecast.planningScenarioPeakRiseNote} Higher path "${PROVENANCE.ieprDemandForecast.highScenarioPeakRiseLabel}": ${PROVENANCE.ieprDemandForecast.highScenarioPeakRiseNote} ${PROVENANCE.ieprDemandForecast.dataCenterUpwardRevisionNote} ${PROVENANCE.ieprDemandForecast.strengthLabel}. Retrieved ${PROVENANCE.ieprDemandForecast.retrievedAsOf}.`,
         url: PROVENANCE.ieprDemandForecast.url,
       };
     case "eiaAeo2026":

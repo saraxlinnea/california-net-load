@@ -10,6 +10,8 @@ export type StatBubbleProps = {
   value: string;
   label: string;
   source: string;
+  /** Optional caption under the source line (scenario / framing notes). */
+  caption?: string;
   /** Provenance-derived citation id(s) for superscript markers. */
   cite?: CitationId | CitationId[];
   /**
@@ -71,6 +73,7 @@ export function StatBubble({
   value,
   label,
   source,
+  caption,
   cite,
   count,
 }: StatBubbleProps) {
@@ -109,6 +112,7 @@ export function StatBubble({
         {source}
         {cite ? <Cite id={cite} /> : null}
       </p>
+      {caption ? <p className="stat-bubble-caption">{caption}</p> : null}
     </div>
   );
 }
@@ -136,14 +140,14 @@ export const SITE_STATS: readonly StatBubbleProps[] = [
     },
   },
   {
-    value: "Up to 61%",
+    value: "~42%",
     label:
-      "High-scenario rise in CAISO peak demand by ~2045 versus today, mostly from EVs (CEC)",
+      "Planning-scenario rise in CAISO peak demand by ~2045 versus today, mostly from EVs (CEC)",
     source: "CEC Integrated Energy Policy Report, adopted Jan 2026",
     cite: "ieprDemandForecast",
     count: {
-      end: 61,
-      format: (n) => `Up to ${Math.round(n)}%`,
+      end: 42,
+      format: (n) => `~${Math.round(n)}%`,
     },
   },
   {

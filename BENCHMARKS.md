@@ -39,7 +39,7 @@ Cross-check: Item 6 slide 10 growth bars (+8,234 EV / +4,721 DC) closely match t
 
 Do **not** mix these with the Data Centers topic-page levels (~1,000 MW early 2026 / ~4,500 MW ~2040): different framing and end year.
 
-### CED managed sales by sector (Fleet stacked bars, GWh)
+### CED managed sales by sector (extract locked; Fleet UI parked)
 
 Source: `data/raw/i25_Managed_Sales_by_Sector_and_Zone_Planning_Library_ada.xlsx`.  
 `planning_sales = baseline_sales_mid + aaee_3 + aafs_2 + ldev_aate_2 + mdhd_aate_2` (known_loads excluded). EV overlay = AATE Scenario 2 (`ldev_aate_2 + mdhd_aate_2`), broken out from Commercial/Residential.
@@ -49,7 +49,7 @@ Source: `data/raw/i25_Managed_Sales_by_Sector_and_Zone_Planning_Library_ada.xlsx
 | 2025 | **251,713 GWh** | **0 GWh** | **Confirmed** — workbook sum 2026-07-23 |
 | 2045 | **409,561 GWh** | **32,996 GWh** | **Confirmed** — ~63% higher total than 2025 |
 
-Data centers **not separable** in this file. Locked in `managedSalesBySector2025Vs2045`; extract `data/processed/ced_managed_sales_sector_2025_2045.csv`.
+Data centers **not separable** in this file. Locked in `managedSalesBySector2025Vs2045`; extract `data/processed/ced_managed_sales_sector_2025_2045.csv`. **Not shown on Fleet** until EV breakout labeling is clearer (AATE overlay ≠ all EV sales).
 
 ### CED 2025 Item 6 “Main Drivers” gross/net (Fleet pie)
 
@@ -84,7 +84,8 @@ Site intro and StatBubbles cite the **CEC's** adopted demand forecast, not a pro
 |---|---|---|---|---|
 | CEC demand forecast adoption | Adopted Jan 21, 2026 (CED 2025 / 2025 IEPR) | Forecast years 2025–2045 | [CED 2025 Demand Side Modeling](https://www.energy.ca.gov/data-reports/california-energy-planning-library/forecasts-and-system-planning/demand-side-3) | **Confirmed** — CEC primary page |
 | Largest CAISO peak demand growth driver through 2045 | EV charging / transportation electrification (larger than AI data centers in the same forecast) | Through 2045 | Same CEC IEPR demand forecast (adopted Jan 21, 2026); secondary coverage (e.g. RTO Insider, E&E News) reporting the adopted finding | **Forecast citation (Moderate-Strong)** - cite as CEC finding; not this app's model |
-| CAISO peak demand rise (high scenario) | **Up to ~61%** by ~2045, mostly from EVs | ~2045 high path | Same adopted CEC forecast as reported in secondary summaries of the high scenario; UI label locked as “Up to 61%” | **Forecast citation** — re-check exact high-scenario % against CED 2025 Peak Forecast tables before tightening precision |
+| CAISO peak demand rise (Planning scenario, StatBubble) | **~42%** by ~2045, mostly from EVs | ~2045 Planning path | Same adopted CEC forecast; Planning scenario framing aligned with Fleet driver breakdown; UI label locked as “~42%” | **Forecast citation** - prefer tilde; re-check exact % against CED 2025 Peak Forecast tables before tightening precision |
+| CAISO peak demand rise (high scenario, caption only) | **Up to ~61%** by ~2045, mostly from EVs | ~2045 Local Reliability + Known Loads path | Same adopted CEC forecast as reported in secondary summaries of the high scenario; not the header bubble value | **Forecast citation** - re-check exact high-scenario % against CED 2025 Peak Forecast tables before tightening precision |
 | Data-center estimate upward revision (same forecast) | DC component revised upward shortly before adoption (early Jan 2026) | Pre-adoption update | CEC demand-side page lists “Updated Results for Data Centers, Known Loads…” (January 5, 2026 DAWG Presentation) | **Confirmed** — update noted on CEC page; state explicitly wherever EV-vs-DC is cited |
 | National contrast (not CA peak) | Data centers “dominant driver of long-term U.S. electricity growth” | AEO2026 through 2050 | [EIA AEO2026](https://www.eia.gov/outlooks/aeo/); [press release Apr 8, 2026](https://www.eia.gov/pressroom/releases/press587.php) (exact primary wording) | **Confirmed** — national framing only |
 | CA relative DC market-share decline (contrast) | Developers favor Texas/Southeast (power / interconnection) | Bloom Energy 2026 Data Center Power Report (Jan 2026) | Industry report; no approved primary PDF URL in this repo | **Methods-only** — do not put in StatBubbles until a primary URL is verified |

@@ -158,27 +158,48 @@ const gridNet = rows.map((r) => r.net_load_MW);
 const anchors = findAnchors(gridNet, hours);
 assert(anchors != null, "grid-only evening ramp anchors exist");
 
+// --- EV-removed baseline: unmanaged and mix share daily energy E(N) ---
+const netClean = gridNet.map((n, i) => n - cec[i]);
 const factor = N_LDV / N0;
 const cecFull = cec.map((v) => v * factor);
 const optFull = redistributeToLowestNet(
   sum(cecFull),
-  gridNet.map((n, i) => n + cecFull[i]),
+  netClean.map((n, i) => n + cecFull[i]),
 );
 const mixFull = mixEvLoads(cecFull, optFull, 0.5);
 
-const unmanagedN0 = gridNet.map((n, i) => n + cec[i]);
-const rateU0 = rateAtAnchors(unmanagedN0, hours, anchors);
 assert(
-  rateU0 != null && Math.abs(rateU0 - rateAtAnchors(unmanagedN0, hours, anchors)) < 1e-9,
-  "p=0: fixed-window unmanaged rate is finite",
-);
-assert(
-  Math.abs(rateU0 - rateU0) < 1e-9,
-  "p=0: fixed-window relief vs itself is ~0",
+  Math.abs(sum(cecFull) - sum(mixFull)) < 1e-6,
+  "unmanaged and mix conserve the same daily EV energy E(N)",
 );
 
-const unmanagedFull = gridNet.map((n, i) => n + cecFull[i]);
-const mixNetFull = gridNet.map((n, i) => n + mixFull[i]);
+const unmanagedFull = netClean.map((n, i) => n + cecFull[i]);
+const mixNetFull = netClean.map((n, i) => n + mixFull[i]);
+assert(
+  Math.abs(sum(unmanagedFull.map((v, i) => v - netClean[i])) - sum(cecFull)) <
+    1e-6 &&
+    Math.abs(sum(mixNetFull.map((v, i) => v - netClean[i])) - sum(mixFull)) <
+      1e-6,
+  "both net lines add the same fleet energy onto EV-removed baseline",
+);
+
+// At N = N0, clean + CEC recovers historical net
+const recoverN0 = netClean.map((n, i) => n + cec[i]);
+assert(
+  recoverN0.every((v, i) => Math.abs(v - gridNet[i]) < 1e-9),
+  "at N=N0 unmanaged, net_clean + cec(N0) recovers historical net",
+);
+
+const rateU0 = rateAtAnchors(
+  netClean.map((n, i) => n + cec[i]),
+  hours,
+  anchors,
+);
+assert(
+  rateU0 != null && Number.isFinite(rateU0),
+  "p=0: fixed-window unmanaged rate is finite",
+);
+
 const rateU = rateAtAnchors(unmanagedFull, hours, anchors);
 const rateM = rateAtAnchors(mixNetFull, hours, anchors);
 assert(rateU != null && rateM != null, "fixed-window rates at large fleet");
@@ -209,18 +230,6 @@ const relief = rateU - rateM;
 assert(
   Number.isFinite(relief),
   `fixed-window relief at 50% mix / full LDV = ${relief.toFixed(1)} MW/h`,
-);
-
-// --- Signed incremental conserves daily energy (no max(0) floor) ---
-const mixN0 = mixEvLoads(cec, redistributeToLowestNet(sum(cec), unmanagedN0), 0.5);
-const signedInc = mixFull.map((v, i) => v - mixN0[i]);
-assert(
-  Math.abs(sum(signedInc) - (sum(mixFull) - sum(mixN0))) < 1e-6,
-  "signed incremental Σ = E(N) − E(N0) at p=0.5",
-);
-assert(
-  Math.abs(sum(signedInc) - (sum(cecFull) - sum(cec))) < 1e-6,
-  "signed incremental Σ = scale energy growth (mix conserves E)",
 );
 
 if (failed) {

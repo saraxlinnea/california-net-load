@@ -47,8 +47,10 @@ export SSL_CERT_FILE=$(python -c "import certifi; print(certifi.where())")
 
 ## Frontend conventions
 
-- Multi-page: `/` Adoption (home), `/charge` PG&E costs, `/fuel`, `/storage`,
-  `/compare`, `/methods` (Math + Citations).
+- Public nav: `/` Fleet (home), `/fuel`, `/compare`, `/methods` (Formulas,
+  assumptions, and sources). Methods sits in a right-side reference group.
+- Parked (not in public nav): `/charge` Cost, `/storage` Storage. See
+  “Parked” below.
 - Shareable query params (`date`, `scenario`, `plan`, `mode`, `cars`, `peak`,
   `adoption`, `participate`, optional `scale`)
   live in `frontend/src/shareState.ts`; Layout preserves the full share query.
@@ -57,6 +59,20 @@ export SSL_CERT_FILE=$(python -c "import certifi; print(certifi.where())")
 - After changing TOU rates, re-fetch the PG&E PDF and update
   `tou_rates_pge.csv` + `provenance.ts` together.
 - Territory costs: PG&E only until SCE/SDG&E rates are verified and pasted.
+
+## Parked (saved, not public UI)
+
+Keep code and locked extracts in the repo; do not surface these in public nav
+or primary CTAs until presentation-ready.
+
+- **CED managed sales by sector (GWh):** extract +
+  `PROVENANCE.ieprDemandForecast.managedSalesBySector2025Vs2045` locked;
+  Fleet stacked-bar UI removed until AATE EV overlay labeling is clear
+  (AATE ≠ all EV sales). See `BENCHMARKS.md`.
+- **Cost tab (`/charge`):** full PG&E TOU calculator kept in code
+  (`CostPage`, `insights.ts` cost math, `tou_rates_pge.csv`). Hidden from
+  public nav and primary links until Cost UI is ready. Deep URL
+  `/charge` may still load; do not advertise it.
 
 ## GitHub hygiene
 

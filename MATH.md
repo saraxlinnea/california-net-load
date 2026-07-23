@@ -108,8 +108,9 @@ equals average MW in hour \(h\). Summing hourly EV MW over the day recovers
 \]
 
 **Double-count honesty:** CAISO metered load already embeds some EV charging.
-Overlaying a full \(N_0\) profile on that day is a **counterfactual shape**, not
-proven incremental MW. The UI labels that case accordingly.
+The Fleet chart removes today’s modeled CEC profile at \(N_0\) from historical
+net before placing the selected fleet (see §3b), so unmanaged vs shifted lines
+compare timing at the same daily energy \(E(N)\), not “EVs present vs absent.”
 
 **Validation:** at the former NHTS-era mid (27 mi/day), daily energy ≈ CEC’s own summer-weekday `raw_mw` sum (~16,055 MWh) → ~1.00×. Primary mid is now **27.9** mi/day (FHWA), so modeled energy at \(N_0\) is ~16,581 MWh/day (~3.3% higher).
 
@@ -140,32 +141,36 @@ Hourly EV load scales with fleet (same CEC shape \(s_h\), same \(m,k\)):
 
 \[
 E_{\text{day}}(N) = \frac{N \cdot m \cdot k}{1000},\quad
-\text{ev}_h^{\text{total}}(N) = E_{\text{day}}(N) \cdot s_h
+\text{ev}_h^{\text{CEC}}(N) = E_{\text{day}}(N) \cdot s_h
 \]
 
 Equivalently, scale a baseline series built at \(N_0\) by \(N / N_0\).
 
-**Incremental overlay (choice A, when \(N > N_0\)):** chart and primary peak/ramp
-metrics use signed growth (mix at same participation \(p\)):
+**EV-charging-removed baseline:** subtract today’s modeled unmanaged CEC at
+\(N_0\) from historical net, then add back the **full** selected fleet:
 
 \[
-\text{ev}_h^{\text{chart}} = \text{ev}_h^{\text{mix}}(N,p) - \text{ev}_h^{\text{mix}}(N_0,p)
+\text{net}^{\text{clean}}_h = \text{net}_h - \text{ev}_h^{\text{CEC}}(N_0)
 \]
-
-No floor: \(\sum_h \text{ev}_h^{\text{chart}} = E(N) - E(N_0)\). A negative hour means
-below today’s modeled mix that hour (reshape), not a data error.
-
-Share URLs still carry \(a\) / \(s\) / \(p\); only the plotted series changes.
-When \(N \le N_0\), the chart shows the full counterfactual profile with a
-double-count caveat (load already embeds some EVs; overlay is not incremental MW).
-
-Share of that CAISO day’s energy (using the **chart** series):
 
 \[
-\%_{\text{CAISO}} = \frac{\sum_h \text{ev}_h^{\text{chart}}}{\sum_h \text{load}_h} \times 100
+\text{net}+\text{unmanaged}_h = \text{net}^{\text{clean}}_h + \text{ev}_h^{\text{CEC}}(N)
 \]
 
-Managed participation \(p \in [0,1]\) (illustrative, **Adoption**): keep daily energy, mix unmanaged CEC with a **net-load-weighted** (lowest-strain) shape. Weights use one pass on \(\text{net} + \text{ev}^{\text{CEC}}(N)\) (feedback), still illustrative:
+\[
+\text{net}+\text{shifted}_h = \text{net}^{\text{clean}}_h + \text{ev}_h^{\text{mix}}(N,p)
+\]
+
+Unmanaged and mix conserve the same daily energy: \(\sum_h \text{ev}_h^{\text{CEC}}(N) = \sum_h \text{ev}_h^{\text{mix}}(N,p) = E(N)\).
+The chart never compares “EVs present” against “EVs absent.”
+
+Share of that CAISO day’s energy (full fleet series):
+
+\[
+\%_{\text{CAISO}} = \frac{E(N)}{\sum_h \text{load}_h} \times 100
+\]
+
+Managed participation \(p \in [0,1]\) (illustrative, **Adoption**): keep daily energy, mix unmanaged CEC with a **net-load-weighted** (lowest-strain) shape. Weights use one pass on \(\text{net}^{\text{clean}} + \text{ev}^{\text{CEC}}(N)\) (feedback), still illustrative:
 
 \[
 \text{ev}^{\text{mix}}_h = (1-p)\,\text{ev}^{\text{CEC}}_h + p\,\text{ev}^{\text{opt}}_h
@@ -174,7 +179,7 @@ Managed participation \(p \in [0,1]\) (illustrative, **Adoption**): keep daily e
 The Cost page still uses a separate midday solar DR shape for its schedule bill story (see §4).
 
 **Label required:** illustrative scale-up with fixed CEC shape and kWh/car.
-Not a forecast of where incremental charging lands, when stock turns over, or
+Not a forecast of where new charging lands, when stock turns over, or
 how behavior and rates reshape the day; not an RA study or distribution
 analysis. Uniform linear scale is chosen because inventing location and
 behavior would be less honest than scaling a known shape.
@@ -188,10 +193,10 @@ behavior would be less honest than scaling a known shape.
 Unmanaged loads \(\text{ev}_h\) come from the CEC shape (§3), scaled to fleet \(N\).
 
 Optimized loads keep the **same daily energy** \(E = \sum_h \text{ev}_h\), redistributed
-toward hours when **net + unmanaged EV** is lowest (one-pass feedback):
+toward hours when **EV-removed net + unmanaged EV** is lowest (one-pass feedback):
 
 \[
-n_h = \text{net}_h + \text{ev}^{\text{CEC}}_h,\quad
+n_h = \text{net}^{\text{clean}}_h + \text{ev}^{\text{CEC}}_h,\quad
 w_h = \max(n_{\max} - n_h,\, 0) + \varepsilon
 \]
 

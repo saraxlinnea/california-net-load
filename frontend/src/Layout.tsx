@@ -8,7 +8,6 @@ import "./App.css";
 
 const STORY_NAV = [
   { to: "/", label: "Fleet" },
-  { to: "/charge", label: "Cost" },
   { to: "/fuel", label: "Fuel" },
   { to: "/compare", label: "Compare" },
 ] as const;

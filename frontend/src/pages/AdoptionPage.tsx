@@ -20,9 +20,8 @@ export default function AdoptionPage() {
   const {
     state,
     setDate,
-    setScenario,
     setAdoption,
-    setScale,
+    setTodayFleet,
     setParticipate,
   } = useShareState(days);
 
@@ -71,8 +70,6 @@ export default function AdoptionPage() {
   const pageGuide = (
     <nav className="page-guide page-guide-compact" aria-label="Other pages">
       <span className="page-guide-title">Also</span>
-      <Link to={`/charge${qs}`}>Cost</Link>
-      <span aria-hidden="true"> · </span>
       <Link to={`/fuel${qs}`}>Fuel</Link>
       <span aria-hidden="true"> · </span>
       <Link to={`/compare${qs}`}>Compare</Link>
@@ -97,9 +94,8 @@ export default function AdoptionPage() {
           date={state.date}
           state={state}
           onDateChange={setDate}
-          onScenario={setScenario}
           onAdoption={setAdoption}
-          onScale={setScale}
+          onTodayFleet={setTodayFleet}
           onParticipate={setParticipate}
           pageGuide={pageGuide}
         />

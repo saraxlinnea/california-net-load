@@ -111,13 +111,23 @@ export default function MethodsPage() {
           totals, storage charge/discharge).
         </p>
         <p className="methods-formula">
-          net_plus_ev<sub>h</sub> = net_load<sub>h</sub> + ev_MW<sub>h</sub>
+          net_clean<sub>h</sub> = net_load<sub>h</sub> − ev_CEC<sub>h</sub>(N
+          <sub>0</sub>)
+        </p>
+        <p className="methods-formula">
+          net_plus_unmanaged<sub>h</sub> = net_clean<sub>h</sub> + ev_CEC
+          <sub>h</sub>(N)
+        </p>
+        <p className="methods-formula">
+          net_plus_shifted<sub>h</sub> = net_clean<sub>h</sub> + ev_mix
+          <sub>h</sub>(N, p)
         </p>
         <p>
-          CAISO metered load already embeds some EV charging. Overlaying
-          today&apos;s full AFDC fleet N<sub>0</sub> is a counterfactual shape,
-          not proven extra MW on that day. When N &gt; N<sub>0</sub>, the Fleet
-          chart plots only the increment ev(N) − ev(N<sub>0</sub>).
+          CAISO metered load already embeds some EV charging. The Fleet chart
+          subtracts today&apos;s modeled CEC profile at N<sub>0</sub>, then adds
+          back the full selected fleet as unmanaged or shifted charging. Both
+          lines use the same daily energy E(N); the comparison is timing, not
+          EVs present versus absent.
         </p>
 
         <h3 id="formula-adoption">Fleet scale and mix</h3>
@@ -142,8 +152,7 @@ export default function MethodsPage() {
           <sub>h</sub>
         </p>
         <p className="methods-formula">
-          when N &gt; N<sub>0</sub>: ev_chart<sub>h</sub> = ev_mix(N) −
-          ev_mix(N<sub>0</sub>) &nbsp;(signed; Σ = E(N) − E(N<sub>0</sub>))
+          Σ ev_CEC(N) = Σ ev_mix(N, p) = E(N) &nbsp;(same daily kWh)
         </p>
 
         <h3 id="methods-lowest-strain">
@@ -151,13 +160,13 @@ export default function MethodsPage() {
         </h3>
         <p>
           Same daily energy E as the CEC series at fleet N, redistributed toward
-          hours when net + unmanaged EV at that fleet is lowest (one-pass
-          feedback)
+          hours when EV-removed net + unmanaged EV at that fleet is lowest
+          (one-pass feedback)
           <Cite id="grid" />. ε keeps every hour eligible if the series is flat.
           Not a utility DR schedule ({CLAIM.C7.id} · {CLAIM.C7.label}).
         </p>
         <p className="methods-formula">
-          n<sub>h</sub> = net<sub>h</sub> + ev_CEC<sub>h</sub>; &nbsp; w
+          n<sub>h</sub> = net_clean<sub>h</sub> + ev_CEC<sub>h</sub>; &nbsp; w
           <sub>h</sub> = max(n_max − n<sub>h</sub>, 0) + ε
         </p>
         <p className="methods-formula">
@@ -188,8 +197,8 @@ export default function MethodsPage() {
           For plan p and shape s (CEC, midday, or off-peak), r<sub>h</sub> is
           ¢/kWh from the verified PG&E schedule
           <Cite id="tou" />. Year and month annualize one season day. Energy
-          charges only; not a full bill ({CLAIM.C5.id} · {CLAIM.C5.label}). See{" "}
-          <Link to={`/charge${qs}`}>Cost</Link>.
+          charges only; not a full bill ({CLAIM.C5.id} · {CLAIM.C5.label}).
+          Cost UI is parked; formulas stay here.
         </p>
         <p className="methods-formula">
           r̄ = Σ<sub>h∈rated</sub> (ev<sup>s</sup><sub>h</sub> / E_rated) · r
@@ -293,8 +302,8 @@ export default function MethodsPage() {
           </li>
           <li>
             PG&E ¢/car·day uses that day&apos;s hourly energy shares × plan
-            rates (energy ¢ only). See <Link to={`/charge${qs}`}>Cost</Link>
-            <Cite id="tou" />.
+            rates (energy ¢ only)
+            <Cite id="tou" />. Cost UI is parked; see TOU formulas above.
           </li>
         </ol>
       </section>
@@ -399,19 +408,19 @@ export default function MethodsPage() {
         </article>
 
         <article className="methods-assumption">
-          <h3>Incremental overlay when N &gt; N₀</h3>
+          <h3>EV-removed baseline, then full fleet</h3>
           <p>
             <strong>Assumption.</strong> Historical CAISO load already includes
-            some EV charging. At N = N<sub>0</sub> the green band is a
-            counterfactual full-fleet profile (not incremental MW). When N &gt; N
-            <sub>0</sub>, the chart and primary peak metrics use signed growth:
-            ev_mix(N) − ev_mix(N<sub>0</sub>) with Σ = E(N) − E(N<sub>0</sub>);
-            a negative hour means below today&apos;s modeled mix that hour.
+            some EV charging. The Fleet chart subtracts today&apos;s modeled CEC
+            profile at N<sub>0</sub> from net load, then adds back the full
+            selected fleet as unmanaged CEC or as the p-mix with lowest-strain
+            hours. Unmanaged and mix conserve the same daily energy E(N).
           </p>
           <p>
-            <strong>Why.</strong> Avoids presenting today&apos;s AFDC fleet as
-            additive MW on a day that already embeds EVs, while still showing
-            order-of-magnitude growth at higher adoption.
+            <strong>Why.</strong> Avoids double-counting today&apos;s embedded
+            EV charging when N differs from N<sub>0</sub>, while comparing
+            timing at one fleet size rather than &quot;with EVs vs without
+            EVs.&quot;
           </p>
           <p>
             <strong>Evidence.</strong> Model choice in <code>MATH.md</code> §3 /
@@ -421,15 +430,16 @@ export default function MethodsPage() {
         </article>
 
         <article className="methods-assumption">
-          <h3>Lowest-strain mix uses net + unmanaged EV</h3>
+          <h3>Lowest-strain mix uses EV-removed net + unmanaged EV</h3>
           <p>
             <strong>Assumption.</strong> Participation p mixes unmanaged CEC
-            charging with a shape weighted toward hours when net + unmanaged EV
-            at fleet N is lowest (one-pass feedback). Still illustrative.
+            charging with a shape weighted toward hours when EV-removed net +
+            unmanaged EV at fleet N is lowest (one-pass feedback). Still
+            illustrative.
           </p>
           <p>
-            <strong>Why.</strong> At large fleets, grid-only net ignores the EV
-            already placed on the day; one feedback pass is a small honesty
+            <strong>Why.</strong> At large fleets, ignoring EV already placed on
+            the day understates strain; one feedback pass is a small honesty
             upgrade without claiming an iterative OPF.
           </p>
           <p>

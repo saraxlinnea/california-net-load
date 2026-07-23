@@ -146,6 +146,16 @@ button:focus-visible {
   color: var(--muted);
 }
 
+.stat-bubble-caption {
+  margin: 0.45rem 0 0;
+  font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+  font-size: 0.68rem;
+  line-height: 1.4;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--muted);
+}
+
 .site-nav {
   display: flex;
   flex-wrap: wrap;
@@ -348,9 +358,92 @@ button:focus-visible {
 .controls-adoption {
   gap: 0.4rem 0.85rem;
   padding: 0.55rem 0.75rem 0.65rem;
-  margin-top: 0.85rem;
+  margin-top: 0;
   margin-bottom: 1.25rem;
   grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
+}
+
+.controls-adoption-wrap {
+  margin-top: 0.85rem;
+  margin-bottom: 0;
+}
+
+.controls-day-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  max-width: 100%;
+  margin: 0 0 -1px;
+  padding: 0.35rem 0.7rem 0.4rem;
+  border: 1px solid var(--line);
+  border-bottom: none;
+  border-radius: 2px 2px 0 0;
+  background: var(--panel);
+  font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+  font-size: 0.78rem;
+  line-height: 1.3;
+  color: var(--muted);
+}
+
+.controls-day-tab-label {
+  flex-shrink: 0;
+  font-weight: 500;
+  color: var(--ink);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.controls-day-tab-select {
+  appearance: none;
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  border: none;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.78rem;
+  line-height: 1.3;
+  padding: 0;
+  cursor: pointer;
+  text-overflow: ellipsis;
+}
+
+.controls-day-tab-select:focus {
+  outline: 1px dotted var(--muted);
+  outline-offset: 2px;
+}
+
+.controls-adoption-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.65rem 1.1rem;
+  margin-top: 0.15rem;
+}
+
+.controls-adoption-tools .advanced-fleet {
+  flex: 1 1 12rem;
+  margin-top: 0;
+  max-width: none;
+}
+
+.reset-today-btn {
+  appearance: none;
+  border: none;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  font-size: 0.82rem;
+  color: var(--muted);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+.reset-today-btn:hover {
+  color: var(--ink);
 }
 
 .controls-adoption .field {
@@ -732,15 +825,18 @@ button:focus-visible {
   z-index: 6;
   top: calc(100% + 0.35rem);
   left: 0;
-  width: min(22rem, 78vw);
-  padding: 0.65rem 0.75rem;
+  width: min(26rem, 82vw);
+  padding: 0.7rem 0.8rem;
   background: var(--panel);
   border: 1px solid var(--line);
   box-shadow: 0 4px 14px rgba(26, 29, 33, 0.08);
   color: var(--muted);
-  font-size: 0.8rem;
+  font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+  font-size: 0.84rem;
   font-weight: 400;
   line-height: 1.45;
+  letter-spacing: normal;
+  text-transform: none;
 }
 
 .why-hint-body p {
@@ -749,6 +845,11 @@ button:focus-visible {
 
 .why-hint-body p + p {
   margin-top: 0.55rem;
+}
+
+.why-hint-body strong {
+  color: var(--ink);
+  font-weight: 600;
 }
 
 .cite-group {

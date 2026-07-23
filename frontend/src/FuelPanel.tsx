@@ -205,16 +205,15 @@ export default function FuelPanel({ rows, factors, date }: Props) {
                     difference
                   </>
                 ) : null}
-                . Illustrative: uses Cost&apos;s CA-average{" "}
+                . Illustrative: uses CA-average{" "}
                 {chart.charge.kwhPerCar.toFixed(1)} kWh/car·day (same miles ×
                 0.30 kWh/mi) and this day&apos;s generation-weighted stack CI in
                 the 10–15 and 17–21 windows.
               </p>
               <p className="chart-narrative fuel-bridge">
                 Charging timing affects not just grid strain (
-                <Link to={`/${qs}`}>Fleet</Link>) and cost (
-                <Link to={`/charge${qs}`}>Cost</Link>) but carbon intensity too:
-                same shift in hours, third consequence.
+                <Link to={`/${qs}`}>Fleet</Link>) but carbon intensity too:
+                same shift in hours, another consequence.
               </p>
             </div>
           )}

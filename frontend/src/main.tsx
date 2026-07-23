@@ -19,13 +19,14 @@ createRoot(document.getElementById("root")!).render(
       <Routes>
         <Route element={<Layout />}>
           <Route index element={<AdoptionPage />} />
+          {/* Cost parked: keep route for deep links; not in public nav. */}
           <Route path="charge" element={<CostPage />} />
           <Route path="fuel" element={<FuelPage />} />
           <Route path="storage" element={<StoragePage />} />
           <Route path="compare" element={<ComparePage />} />
           <Route path="methods" element={<MethodsPage />} />
           <Route path="adoption" element={<Navigate to="/" replace />} />
-          <Route path="overview" element={<Navigate to="/charge" replace />} />
+          <Route path="overview" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>
     </BrowserRouter>

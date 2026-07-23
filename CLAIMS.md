@@ -32,7 +32,7 @@ Strength scale (Strong → Speculative), AI-OS-style:
 
 Related (not a separate C-id): day generation mix pie on `/` sums CAISO fuel-mix MW as MWh (**Strong** as sourced generation-by-fuel). CEC data-center **peak demand share** (~1,000 MW / ~2% of CAISO peak, early 2026) is **Confirmed** in `BENCHMARKS.md` and `provenance.ts` (`PROVENANCE.dataCenters`). That figure is peak share of system peak, **not** annual end-use energy share. End-use / generation-mix pie slices (homes, data centers, industry) remain **out of scope** on the fuel-mix donut (would misrepresent CAISO generation-by-fuel).
 
-Related (not a C-id; **not** a C6/C7/C8 upgrade): **CEC 2025 IEPR demand forecast** (adopted Jan 21, 2026) finds EV charging, not AI data centers, to be the largest driver of CAISO **peak demand growth** through 2045, including after an upward revision to the data-center component shortly before adoption. High-scenario peak rise labeled **Up to 61%** in the site StatBubbles. Strength: **Moderate-Strong (forecast citation)**. Cite as the CEC's finding via `PROVENANCE.ieprDemandForecast`; national EIA AEO2026 data-center growth contrast via `PROVENANCE.eiaAeo2026`; Bloom Energy CA share note is Methods-only (`PROVENANCE.bloomEnergyDcReport`). Do not present these as this project's model output.
+Related (not a C-id; **not** a C6/C7/C8 upgrade): **CEC 2025 IEPR demand forecast** (adopted Jan 21, 2026) finds EV charging, not AI data centers, to be the largest driver of CAISO **peak demand growth** through 2045, including after an upward revision to the data-center component shortly before adoption. Planning-scenario peak rise labeled **~42%** in the site StatBubbles; Local Reliability + Known Loads can run higher (**~61%**, caption only). Strength: **Moderate-Strong (forecast citation)**. Cite as the CEC's finding via `PROVENANCE.ieprDemandForecast`; national EIA AEO2026 data-center growth contrast via `PROVENANCE.eiaAeo2026`; Bloom Energy CA share note is Methods-only (`PROVENANCE.bloomEnergyDcReport`). Do not present these as this project's model output.
 
 ---
 
@@ -43,15 +43,15 @@ Related (not a C-id; **not** a C6/C7/C8 upgrade): **CEC 2025 IEPR demand forecas
 | UI element | Claim | Label shown |
 |------------|--------|-------------|
 | Site intro paragraph | CEC IEPR EV-vs-DC peak-driver framing | Moderate-Strong forecast citation (CEC, not this app) |
-| StatBubbles (5) | CAISO 2024 peak; AFDC plug-ins; IEPR high-scenario peak rise; CEC DC ~2%; CEC LDV ~29.7M | Confirmed / forecast citation per `BENCHMARKS.md` |
+| StatBubbles (5) | CAISO 2024 peak; AFDC plug-ins; IEPR Planning-scenario peak rise (~42%); CEC DC ~2%; CEC LDV ~29.7M | Confirmed / forecast citation per `BENCHMARKS.md` |
 
 ### `/` Adoption (home)
 
 | UI element | Claim | Label shown |
 |------------|--------|-------------|
-| Net load + EV chart (default UI) | C1 + C6/C7 stress | Strong grid; Weak as forecast / Strong as arithmetic; C7 illustrative. When N > N0, green = signed incremental growth (mix(N) − mix(N0); Σ = E(N) − E(N0)); at N ≤ N0, counterfactual full-fleet profile labeled not incremental MW (CAISO load already embeds some EVs) |
+| Unmanaged vs shifted charging chart (default UI) | C1 + C6/C7 stress | Strong grid; Weak as forecast / Strong as arithmetic; C7 illustrative. Two nets at same fleet N: unmanaged CEC vs shifted mix on EV-removed baseline (net − ev_CEC(N0) + full fleet); green = full-fleet charging (same daily E); not with-vs-without EVs |
 | Fleet presets / today % LDV | C3, C4 | Strong / Moderate |
-| Peak EV + ramp relief key stats | C6, C7 | Stress arithmetic on chart series (growth peak when N > N0; counterfactual peak label when N ≤ N0); Weak / Speculative for relief |
+| Peak EV + ramp relief key stats | C6, C7 | Stress arithmetic on full-fleet series (unmanaged vs mix ramp); Weak / Speculative for relief |
 | Shift bridge callout | C7 and C5 as separate labeled blocks | Illustrative grid · Moderate cost · Methods |
 | Battery flatten compare (unmanaged vs mix) | C8 | Weak; lossless E primary |
 | ACC II note near fleet presets | Policy context | Sales share ≠ fleet share; stress presets |
@@ -59,7 +59,9 @@ Related (not a C-id; **not** a C6/C7/C8 upgrade): **CEC 2025 IEPR demand forecas
 | Item 6 gross peak-growth drivers pie | Item 6 slide 10 gross increases | Forecast citation; split layout (pie left, drivers + offsets right); not a C6 upgrade |
 | Generation donut / EV-vs-BESS / ladder | (parked) | Not in default LinkedIn UI; see `local/linkedin-wip.md` |
 
-### `/charge` (PG&E costs)
+### `/charge` (PG&E costs) (parked)
+
+Not in public nav; deep route kept. Claims below unchanged when Cost UI is re-enabled.
 
 | UI element | Claim | Label |
 |------------|--------|--------|
