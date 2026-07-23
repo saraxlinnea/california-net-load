@@ -40,19 +40,19 @@ export const SCENARIO_META: Record<
   Scenario,
   { label: string; miles: number; note: string }
 > = {
-  low: {
-    label: "Low",
-    miles: 20,
-    note: "GW/NREL odometer study (~7,165 mi/yr)",
-  },
   mid: {
-    label: "Mid",
-    miles: 27,
-    note: "NHTS-based average (~10,000 mi/yr); ~1.00× CEC daily total",
+    label: "CA average",
+    miles: 27.9,
+    note: "FHWA Highway Statistics 2023 Table VM-2 (CA VMT ÷ registered vehicles ÷ 365)",
+  },
+  low: {
+    label: "Lower EV study",
+    miles: 20,
+    note: "GW/NREL odometer study (~7,165 mi/yr); what-if vs statewide average",
   },
   high: {
-    label: "High",
+    label: "Higher EV study",
     miles: 33,
-    note: "UC Davis ITS newer long-range EVs",
+    note: "UC Davis ITS newer long-range EVs; what-if vs statewide average",
   },
 };

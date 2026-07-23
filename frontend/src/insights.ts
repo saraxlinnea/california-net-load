@@ -293,13 +293,17 @@ export function buildThreeClocksCallout(
   };
 }
 
+export type ShiftBridgeCostFraming = "mixVsCec" | "middayVsCec";
+
 export type ShiftBridgeInput = {
   /** Unmanaged minus mixed (existing adoptionStress rampRelief) */
   rampReliefMwPerHour: number;
   participate: number;
-  /** Midday-vs-CEC yearly $/car from computeCostComparison (prefer EV2-A) */
+  /** Yearly $/car savings vs unmanaged CEC (mix or midday, depending on framing) */
   savingsYearlyPerCar: number;
   savingsPlan: string;
+  /** Adoption uses mix-vs-CEC; Cost page may keep midday-vs-CEC. */
+  costFraming?: ShiftBridgeCostFraming;
 };
 
 export type ShiftBridgeCallout = {
@@ -340,29 +344,46 @@ export function buildShiftBridgeCallout(
   const plan = input.savingsPlan;
   const dollars = formatDollars(input.savingsYearlyPerCar);
   const showSplit = pct > 0;
+  const framing = input.costFraming ?? "middayVsCec";
+  const mixFraming = framing === "mixVsCec";
 
-  const prompt =
-    "Raise % of charging shifted to midday (or use a preset) to see illustrative evening ramp relief next to PG&E midday-vs-CEC energy $/car·year.";
+  const prompt = mixFraming
+    ? "Raise % shifted to lowest-strain hours (or use a preset) to see illustrative evening ramp relief next to PG&E mix-vs-CEC energy $/car·year."
+    : "Raise % of charging shifted to midday (or use a preset) to see illustrative evening ramp relief next to PG&E midday-vs-CEC energy $/car·year.";
 
   const intro = showSplit
-    ? `At ${pct}% of daily charging shifted to midday, same kWh, different hours:`
+    ? mixFraming
+      ? `At ${pct}% of daily charging shifted to lowest-strain hours, same kWh, different hours:`
+      : `At ${pct}% of daily charging shifted to midday, same kWh, different hours:`
     : prompt;
 
-  const gridLabel = "Illustrative grid relief (C7)";
+  const gridLabel = mixFraming
+    ? "Illustrative grid relief"
+    : "Illustrative grid relief (C7)";
   const gridValue = hasRelief
     ? `${relief.toLocaleString()} MW/h`
     : "About 0 MW/h";
   const gridDetail = hasRelief
-    ? "Evening ramp rate vs unmanaged CEC at this fleet (illustrative midday mix, not a real DR program)."
+    ? mixFraming
+      ? "Evening ramp rate vs unmanaged CEC at this fleet (illustrative mix, not a real utility program)."
+      : "Evening ramp rate vs unmanaged CEC at this fleet (illustrative midday mix, not a real DR program)."
     : "Little evening ramp relief at this fleet and day in this model.";
 
-  const costLabel = "PG&E energy cost (C5)";
+  const costLabel = mixFraming
+    ? "PG&E energy cost"
+    : "PG&E energy cost (C5)";
   const costValue = hasSavings
     ? `~${dollars}/car·year`
-    : "No midday edge";
+    : mixFraming
+      ? "No mix edge"
+      : "No midday edge";
   const costDetail = hasSavings
-    ? `Midday vs unmanaged CEC on ${plan}; energy charges only, PG&E territory only.`
-    : `On ${plan} for this season day, midday does not beat unmanaged CEC on $/car·year (energy charges only).`;
+    ? mixFraming
+      ? `Active mix vs unmanaged CEC on ${plan}; energy charges only, PG&E territory only.`
+      : `Midday vs unmanaged CEC on ${plan}; energy charges only, PG&E territory only.`
+    : mixFraming
+      ? `On ${plan} for this season day, the active mix does not beat unmanaged CEC on $/car·year (energy charges only).`
+      : `On ${plan} for this season day, midday does not beat unmanaged CEC on $/car·year (energy charges only).`;
 
   const echo = showSplit
     ? `${gridLabel}: ${gridValue}. ${costLabel}: ${costValue}.`
@@ -421,6 +442,39 @@ export function middayVsCecSavings(
   return {
     plan: best.plan,
     savingsYearlyPerCar: Math.max(0, bestSave),
+  };
+}
+
+/**
+ * Adoption bridge: active mix shape vs unmanaged CEC on one plan (default EV2-A).
+ * Same daily kWh per car; only the hourly shares change with participation p.
+ */
+export function mixVsCecSavings(
+  rows: EvRow[],
+  cecLoads: number[],
+  mixLoads: number[],
+  date: string,
+  touRows: TouRow[],
+  scenario: Scenario,
+  preferPlan: TouPlan = "EV2-A",
+): { plan: string; savingsYearlyPerCar: number } {
+  const miles = SCENARIO_META[scenario].miles;
+  const energyKwhPerVehicle = miles * KWH_PER_MILE;
+  const season = pgeSeasonForDate(date);
+  const cecCost = buildShapeCost(
+    "cec",
+    shapeWeightedRate(rows, cecLoads, preferPlan, season, touRows),
+    energyKwhPerVehicle,
+    1,
+  );
+  const mixRate = shapeWeightedRate(rows, mixLoads, preferPlan, season, touRows);
+  const mixYearly = (energyKwhPerVehicle * mixRate) / 100 * 365;
+  return {
+    plan: preferPlan,
+    savingsYearlyPerCar: Math.max(
+      0,
+      cecCost.yearlyDollarsPerVehicle - mixYearly,
+    ),
   };
 }
 

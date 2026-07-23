@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import Plot from "react-plotly.js";
+import { DefinedTerm } from "./DefinedTerm";
 import {
   buildCarbonIntensityTrace,
   buildFuelLayout,
@@ -87,21 +88,28 @@ export default function FuelPanel({ rows, factors, date }: Props) {
       </div>
 
       {chart && (
-        <Plot
-          data={chart.traces}
-          layout={{ ...chart.layout, autosize: true }}
-          config={PLOTLY_CONFIG}
-          style={{ width: "100%", height: "440px" }}
-          useResizeHandler
-        />
+        <>
+          <p className="chart-caption">
+            What is generating California&apos;s power this hour: solar and wind
+            by day, more gas and imports after dark. That mix is why{" "}
+            <DefinedTerm id="netLoad" /> (demand minus wind and solar) shapes the
+            duck curve.
+          </p>
+          <Plot
+            data={chart.traces}
+            layout={{ ...chart.layout, autosize: true }}
+            config={PLOTLY_CONFIG}
+            style={{ width: "100%", height: "440px" }}
+            useResizeHandler
+          />
+        </>
       )}
 
       <div className="chart-copy">
         <p className="chart-narrative">
-          Stacked areas are CAISO hourly fuel mix (MW). Midday solar rises;
-          evening natural gas and imports typically fill the ramp. The brown
-          line is operational stack carbon intensity (lb CO₂/MWh) using cited
-          emission factors.
+          Stacked areas are CAISO hourly fuel mix (MW). The brown line is
+          operational stack carbon intensity (lb CO₂/MWh) using cited emission
+          factors.
           {chart && (
             <>
               {" "}
@@ -140,6 +148,11 @@ export default function FuelPanel({ rows, factors, date }: Props) {
           className="chart-panel fuel-period-panel"
           aria-label="Midday versus evening generation share"
         >
+          <p className="chart-caption">
+            Midday versus evening generation share on this day: solar gives way
+            to gas and imports after dark. Same fuel-mix story as the stack
+            above, as percent of each window.
+          </p>
           <Plot
             data={periodChart.data}
             layout={{ ...periodChart.layout, autosize: true }}
@@ -148,13 +161,6 @@ export default function FuelPanel({ rows, factors, date }: Props) {
             useResizeHandler
           />
           <div className="chart-copy">
-            <p className="chart-narrative">
-              How to read this: each bar is 100% of CAISO generation energy in
-              that hour window (hourly MW summed as MWh). Midday (10–15) vs
-              evening (17–21) shows how solar share gives way to gas and imports
-              on this day. Operational generation mix only; not customer end-use
-              and not a data-center pie.
-            </p>
             <p className="chart-sources">{CI_CAVEATS}</p>
           </div>
         </section>

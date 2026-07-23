@@ -1,5 +1,6 @@
 import Plot from "react-plotly.js";
 import type { Data, Layout } from "plotly.js";
+import { DefinedTerm } from "../DefinedTerm";
 import type { EveningRamp } from "../insights";
 import { SIMPLIFIED_MODEL } from "../insights";
 import { PLOTLY_CONFIG } from "../plotlyConfig";
@@ -22,6 +23,12 @@ export default function OverviewChart({
 }: Props) {
   return (
     <section className="chart-panel">
+      <p className="chart-caption">
+        This page is about the bill clock: PG&E time-of-use prices. Those hours
+        are not the same as <DefinedTerm id="caiso" />
+        &apos;s evening <DefinedTerm id="netLoad" /> climb. Use Adoption to see
+        grid timing; use this page for schedule cost.
+      </p>
       {error && <p className="error">{error}</p>}
       {loading && !hasRows && <p className="muted">Loading…</p>}
       {chart && (
@@ -34,16 +41,9 @@ export default function OverviewChart({
         />
       )}
       <div className="chart-copy">
-        <p className="chart-narrative">
-          One California day (24 hourly points, US/Pacific). Demand often rises
-          into the early evening; net load usually climbs later as solar drops.
-          On PG&E EV plans, peak prices fall in the evening window, so charging
-          then costs more. Switch the charging schedule to move the same daily
-          energy into midday solar or off-peak hours.
-        </p>
         <p className="chart-identity">
-          Net load = total load − solar − wind. Gold and blue fill the gap
-          between those lines: renewable supply, not missing demand.
+          <DefinedTerm id="netLoad" /> = total load - solar - wind. Gold and blue
+          fill the gap between those lines: renewable supply, not missing demand.
           {ramp && (
             <>
               {" "}

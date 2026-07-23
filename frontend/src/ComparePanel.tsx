@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Plot from "react-plotly.js";
 import { buildCompareLayout, buildCompareTraces } from "./compareChart";
+import { DefinedTerm } from "./DefinedTerm";
 import { loadEvTimeseries } from "./loadData";
 import { formatGw } from "./storageSizing";
 import { computeEveningRamp } from "./insights";
@@ -108,10 +109,10 @@ export default function ComparePanel({
 
       {deltas && (
         <div className="compare-deltas" aria-label="Day B minus Day A">
-          <p className="compare-deltas-lede">
-            Day B minus Day A: peak days usually run higher load and a shallower
-            midday net-load belly than spring, so evening ramps can look very
-            different even with the same EV shape overlay.
+          <p className="chart-caption">
+            Day B minus Day A in three numbers: peak load, deepest{" "}
+            <DefinedTerm id="netLoad">net-load</DefinedTerm> belly, and evening
+            ramp rate. Same EV shape overlay; different grid days.
           </p>
           <div className="storage-grid compare-delta-grid">
             <div className="storage-card">
@@ -143,13 +144,20 @@ export default function ComparePanel({
 
       {error && <p className="error">{error}</p>}
       {chart && (
-        <Plot
-          data={chart.data}
-          layout={{ ...chart.layout, autosize: true }}
-          config={PLOTLY_CONFIG}
-          style={{ width: "100%", height: "400px" }}
-          useResizeHandler
-        />
+        <>
+          <p className="chart-caption">
+            Two real <DefinedTerm id="caiso" /> days side by side: total load and{" "}
+            <DefinedTerm id="netLoad" />. Use this to see how the evening climb
+            changes with the season and the day, not to invent a new EV forecast.
+          </p>
+          <Plot
+            data={chart.data}
+            layout={{ ...chart.layout, autosize: true }}
+            config={PLOTLY_CONFIG}
+            style={{ width: "100%", height: "400px" }}
+            useResizeHandler
+          />
+        </>
       )}
 
       <div className="compare-stats">

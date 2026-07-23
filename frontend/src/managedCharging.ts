@@ -30,13 +30,32 @@ function redistribute(total: number, weights: number[]): number[] {
   return weights.map((w) => total * (w / wSum));
 }
 
-/** Same daily energy, solar-weighted into 10 a.m. to 3 p.m. */
+/** Same daily energy, solar-weighted into 10 a.m. to 3 p.m. (Cost page). */
 export function managedEvLoads(rows: EvRow[], scenario: Scenario): number[] {
   const cec = cecEvLoads(rows, scenario);
   const total = cec.reduce((s, v) => s + v, 0);
   const inWindow = new Set<number>(MANAGED_WINDOW_HOURS);
   const weights = rows.map((r) =>
     inWindow.has(r.hour) ? Math.max(r.solar_MW, 0) || 1 : 0,
+  );
+  return redistribute(total, weights);
+}
+
+/**
+ * Same daily energy E, redistributed toward this day's lowest CAISO net load.
+ * weight_h = max(net_max - net_h, 0) + epsilon. Used by Adoption stress mix.
+ */
+export function netLoadOptimizedEvLoads(
+  rows: EvRow[],
+  scenario: Scenario,
+  epsilon = 1e-6,
+): number[] {
+  const cec = cecEvLoads(rows, scenario);
+  const total = cec.reduce((s, v) => s + v, 0);
+  if (!rows.length || total <= 0) return cec.map(() => 0);
+  const netMax = Math.max(...rows.map((r) => r.net_load_MW));
+  const weights = rows.map(
+    (r) => Math.max(netMax - r.net_load_MW, 0) + epsilon,
   );
   return redistribute(total, weights);
 }

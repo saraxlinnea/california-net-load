@@ -51,6 +51,17 @@ Site intro and StatBubbles cite the **CEC's** adopted demand forecast, not a pro
 | Implied AFDC plug-in share of CA LDV | ~6.68% | \(1{,}981{,}000 / 29{,}657{,}259\) | AFDC 2024 BEV+PHEV ÷ CEC 2025 LDV total | Derived (years differ by one; label in UI) |
 
 Do **not** use DMV “all registered vehicles” (~36M) or Alliance/S&P LDV compilations as the adoption denominator.
+
+## Miles per day (Adoption default)
+
+| Metric | Value | Year | Source | Status |
+|---|---|---|---|---|
+| California VMT (all public roads) | 316,612,000,000 miles | 2023 | [FHWA Highway Statistics 2023 Table VM-2](https://www.fhwa.dot.gov/policyinformation/statistics/2023/vm2.cfm) | **Confirmed** |
+| California registered vehicles | 31,057,329 | 2023 | Same FHWA Table VM-2 | **Confirmed** |
+| Implied mi/day | **27.9** (= 316,612,000,000 / 31,057,329 / 365) | 2023 | Derived from Confirmed FHWA inputs | **Confirmed** — primary Adoption miles/day default |
+| Lower what-if (EV study) | 20 mi/day | — | GW/NREL odometer study | Secondary UI only |
+| Higher what-if (EV study) | 33 mi/day | — | UC Davis ITS newer long-range EVs | Secondary UI only |
+
 ## TOU rates, PG&E
 
 | Metric | Value | Source | Status |
@@ -76,9 +87,10 @@ Do not present these two figures as confirmed in the demo. Fine to cite as "an i
 |---|---|---|---|
 | Statewide LD shape, all 6 season/day-type combos, 2024 | peak 11pm-1am, 17% of daily energy in 2 hrs; consistent across all 6 combos (16,000-16,100 MWh weekday, 11,100-11,200 MWh weekend) | CEC 2022 IEPR PEV Load Shapes file, `Data` sheet, direct read | **Confirmed** — real file, uploaded and parsed directly, full season/day-type table extracted |
 | Location-specific (SF/MF/destination) shape | not publicly available in numeric form | CEC 2024 model deck (described only, not published) | **Confirmed absent** |
-| Modeled EV daily energy (mid scenario, 27 mi/day, BEV+PHEV population) | 16,046 MWh/day | Calculated from AFDC 2024 combined count × real CEC shape | Derived |
+| Modeled EV daily energy (mid scenario, **27.9** mi/day FHWA, BEV+PHEV population) | **16,581 MWh/day** | Calculated from AFDC 2024 combined count × CEC shape × FHWA mi/day | Derived (primary mid) |
+| Legacy cross-check at 27 mi/day (NHTS-era mid) | 16,046 MWh/day | Same pop × shape at 27 mi/day | Historical; replaced as default by FHWA 27.9 |
 | CEC's own implied daily total (Summer Weekday) | 16,055 MWh/day | Same CEC file, same source | **Confirmed** — direct read |
-| **Cross-check: modeled vs. CEC's own total** | **1.00x** | Apples-to-apples, same source file, same year, same day-type | **Validated** — this replaces the earlier GridLab/Brattle comparison as the primary sanity check |
+| **Cross-check note** | Shape×pop still apples-to-apples; absolute MWh at 27.9 is ~3.3% above the old 27 mi / CEC ~16,055 pair | FHWA mid ≠ NHTS 27 | Do not claim 1.00× CEC daily total at the new default |
 | Population correction that fixed the earlier mismatch | BEV-only undercounted vs. CEC's combined BEV+PHEV "PEV" figure | AFDC 2024, both confirmed | Using the wrong population was the main driver of an earlier apparent ~25-45% gap; not a flaw in the shape or mileage assumptions |
 | GridLab/Brattle order-of-magnitude reference | ~690 MW (scaled) | Unverified source, 2035 scenario scaled to 2024 | **Deprecated as primary check** — kept for reference only, the CEC self-comparison above is stronger and apples-to-apples |
 

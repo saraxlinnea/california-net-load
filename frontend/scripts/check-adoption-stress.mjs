@@ -2,7 +2,7 @@
  * Lightweight checks for adoption stress math (MATH.md §3b).
  * Run from frontend/:  node scripts/check-adoption-stress.mjs
  *
- * Validates mid + N_0 daily EV energy against processed CSV (~16,046 MWh)
+ * Validates mid + N_0 daily EV energy against processed CSV (~16,581 MWh at 27.9 mi/day)
  * and a few fleet / mix identities that mirror adoptionStress.ts.
  */
 import { readFileSync } from "node:fs";
@@ -14,9 +14,9 @@ const root = join(__dirname, "../..");
 
 const N0 = 1_981_000;
 const N_LDV = 29_657_259;
-const MILES_MID = 27;
+const MILES_MID = 27.9;
 const KWH_PER_MI = 0.3;
-const EXPECTED_MID_MWH = (N0 * MILES_MID * KWH_PER_MI) / 1000; // 16046.1
+const EXPECTED_MID_MWH = (N0 * MILES_MID * KWH_PER_MI) / 1000; // ~16580.97
 
 let failed = 0;
 
@@ -47,9 +47,9 @@ function sum(xs) {
   return xs.reduce((a, b) => a + b, 0);
 }
 
-function mixEvLoads(cec, midday, p) {
+function mixEvLoads(cec, optimized, p) {
   const q = Math.min(1, Math.max(0, p));
-  return cec.map((c, i) => (1 - q) * c + q * midday[i]);
+  return cec.map((c, i) => (1 - q) * c + q * optimized[i]);
 }
 
 function fleetFromAdoption(a) {
@@ -62,8 +62,8 @@ function fleetFromScale(s) {
 
 // --- constants / formula ---
 assert(
-  Math.abs(EXPECTED_MID_MWH - 16046.1) < 1e-9,
-  `N_0·m·k/1000 = ${EXPECTED_MID_MWH} (≈ 16,046 MWh)`,
+  Math.abs(EXPECTED_MID_MWH - 16_580.97) < 0.01,
+  `N_0·m·k/1000 = ${EXPECTED_MID_MWH} (≈ 16,581 MWh at 27.9 mi/day)`,
 );
 
 const a0 = N0 / N_LDV;
@@ -92,22 +92,21 @@ assert(
   "scale s=2 doubles mid EV daily energy",
 );
 
-// Mix conserves daily energy (synthetic midday = redistribute is unnecessary;
-// any same-sum vector works)
+// Mix conserves daily energy
 const cec = rows.map((r) => r.ev_load_MW_mid);
-const midday = [...cec].reverse(); // same sum, different shape
-const mixed = mixEvLoads(cec, midday, 0.4);
+const optimized = [...cec].reverse(); // same sum, different shape
+const mixed = mixEvLoads(cec, optimized, 0.4);
 assert(
   Math.abs(sum(mixed) - sum(cec)) < 1e-6,
   "mix p=0.4 conserves daily EV energy",
 );
 assert(
-  Math.abs(sum(mixEvLoads(cec, midday, 0)) - sum(cec)) < 1e-9,
+  Math.abs(sum(mixEvLoads(cec, optimized, 0)) - sum(cec)) < 1e-9,
   "mix p=0 equals CEC energy",
 );
 assert(
-  Math.abs(sum(mixEvLoads(cec, midday, 1)) - sum(midday)) < 1e-9,
-  "mix p=1 equals midday energy",
+  Math.abs(sum(mixEvLoads(cec, optimized, 1)) - sum(optimized)) < 1e-9,
+  "mix p=1 equals optimized energy",
 );
 
 if (failed) {

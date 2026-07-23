@@ -4,8 +4,9 @@
  */
 export const PGE_RATE_PDF =
   "https://www.pge.com/assets/pge/docs/account/rate-plans/residential-electric-rate-plan-pricing.pdf";
+/** PG&E EV rate plans hub (landing). PDF above remains the rates primary. */
 export const PGE_EV_RATES =
-  "https://www.pge.com/en/account/rate-plans/electric-vehicle-rate-plans.html";
+  "https://www.pge.com/en/account/rate-plans/electric-vehicles.html";
 
 export const PROVENANCE = {
   /** When this build last re-checked primary sources */
@@ -32,6 +33,7 @@ export const PROVENANCE = {
     source: "AFDC vehicle-registration table",
     year: 2024,
     bevPlusPhev: 1_981_000,
+    afdcUrl: "https://afdc.energy.gov/vehicle-registration?year=2024",
     /** CEC Light-Duty Vehicle Population (DMV-based on-road stock) */
     ldvTotal: 29_657_259,
     ldvAsOf: "2025-12-31",
@@ -45,6 +47,23 @@ export const PROVENANCE = {
     ldvReVerifiedAsOf: "2026-07-22",
     ldvRawPath: "data/raw/Vehicle_Population_Last_updated_04-28-2026_ada.xlsx",
     ldvExtractPath: "data/raw/ldv_county_totals_2025-12-31.csv",
+  },
+  /**
+   * Primary Adoption miles/day default (CA statewide average).
+   * FHWA Highway Statistics 2023 Table VM-2.
+   */
+  milesPerDay: {
+    primaryMiles: 27.9,
+    label: "CA average (FHWA 2023)",
+    caVmt2023: 316_612_000_000,
+    caRegisteredVehicles2023: 31_057_329,
+    formula: "VMT / registered vehicles / 365",
+    source: "FHWA Highway Statistics Series 2023, Table VM-2",
+    url: "https://www.fhwa.dot.gov/policyinformation/statistics/2023/vm2.cfm",
+    retrievedAsOf: "2026-07-22",
+    lowWhatIfMiles: 20,
+    highWhatIfMiles: 33,
+    midDailyEnergyMwhAtN0: 16_581,
   },
   tou: {
     source: "PG&E Residential rate plan pricing PDF",

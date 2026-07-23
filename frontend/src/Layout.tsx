@@ -2,6 +2,7 @@ import { NavLink, Outlet, useSearchParams } from "react-router-dom";
 import { PROVENANCE } from "./provenance";
 import { shareSearchString } from "./shareState";
 import { SITE_STATS, StatBubble } from "./StatBubble";
+import { Cite } from "./WhyHint";
 import "./App.css";
 
 const PRIMARY_NAV = [
@@ -11,9 +12,6 @@ const PRIMARY_NAV = [
   { to: "/compare", label: "Compare" },
   { to: "/methods", label: "Methods" },
 ] as const;
-
-const SITE_INTRO =
-  "California's grid is entering a new era of demand growth. According to the CEC's 2025 IEPR demand forecast (adopted January 2026), regulators expect EV charging, not AI data centers, to be the state's biggest driver of peak demand growth through 2045, and timing matters as much as size: when we charge affects the grid as much as how much we charge. This site walks through real California grid days, real EV charging patterns from state data, and what happens if charging shifts to better hours. Every chart traces to a named, dated source.";
 
 export default function Layout() {
   const [searchParams] = useSearchParams();
@@ -25,7 +23,17 @@ export default function Layout() {
         <NavLink className="site-brand" to={`/${qs}`}>
           California Net Load
         </NavLink>
-        <p className="site-intro">{SITE_INTRO}</p>
+        <p className="site-intro">
+          California&apos;s grid is entering a new era of demand growth. According
+          to the CEC&apos;s 2025 IEPR demand forecast (adopted January 2026)
+          <Cite id="ieprDemandForecast" />, regulators expect EV charging, not AI
+          data centers, to be the state&apos;s biggest driver of peak demand growth
+          through 2045, and timing matters as much as size: when we charge
+          affects the grid as much as how much we charge. This site walks through
+          real California grid days, real EV charging patterns from state data,
+          and what happens if charging shifts to better hours. Every chart traces
+          to a named, dated source.
+        </p>
         <div className="site-stats" role="list" aria-label="Key grid and EV figures">
           {SITE_STATS.map((stat) => (
             <div key={stat.value} role="listitem">

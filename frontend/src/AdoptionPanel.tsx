@@ -10,25 +10,48 @@ import {
   todayAdoptionShare,
   type AdoptionStressResult,
 } from "./adoptionStress";
-import { buildLayout, buildRampAnnotation } from "./chartConfig";
+import { buildLayout, buildRampAnnotation, basePlotlyLayout } from "./chartConfig";
 import {
   buildShiftBridgeCallout,
-  computeCostComparison,
-  middayVsCecSavings,
+  mixVsCecSavings,
 } from "./insights";
 import { PLOTLY_CONFIG } from "./plotlyConfig";
 import { PROVENANCE } from "./provenance";
 import {
-  SCENARIOS,
   SHOW_SHIFT_PARTICIPATE,
   shareSearchString,
   type ShareState,
 } from "./shareState";
 import type { DayOption, EvRow, Scenario, TouRow } from "./types";
 import { SCENARIO_META } from "./types";
+import { Cite, WhyHint } from "./WhyHint";
+import { DefinedTerm } from "./DefinedTerm";
+import {
+  estimateStorageToFlatten,
+  formatGw,
+  formatGwh,
+} from "./storageSizing";
 
 const HONESTY =
-  "Illustrative: same CEC shape and kWh per car. Not a forecast.";
+  "Illustrative: same CEC charging shape and kWh per car. Not a forecast.";
+
+const MILES_PRIMARY_DISCLOSURE =
+  "Assumes California's average miles driven per vehicle per day today, from federal highway data (statewide annual miles driven divided by number of vehicles). When a gas car is swapped for an EV, this model assumes the same driving habits carry over, not a change in how much someone drives.";
+
+const MILES_SECONDARY_NOTE =
+  "EV-specific studies disagree partly because today's EV owners are early adopters, not a stand-in for everyone. For a 50% or 100% fleet what-if, the statewide average is the better default.";
+
+const FLEET_ONELINER =
+  "% of California cars and light trucks (29.7M total, CEC) that are electric.";
+
+const FLEET_DISCLOSURE =
+  "Today uses the AFDC plug-in count. 50% and 100% scale today's CEC charging shape to those fleet sizes. What-if scale-up, not a forecast of when the on-road fleet turns over. ACC II sets new light-duty ZEV sales shares (35% in 2026, 68% in 2030, 100% by 2035): that is sales share, not on-road fleet share, so fleet share lags.";
+
+const LARGE_FLEET_STRAIN_CAVEAT =
+  "At 50% or 100% of California cars and light trucks, this what-if scale-up is large enough that targeting lowest-strain hours using the day's base grid net load (without the added EV charging) is less precise than at today's fleet size. Illustrative only; not a forecast or a real utility program.";
+
+const SHIFT_DISCLOSURE =
+  "This slider moves charging toward hours when this day's net load is lowest (demand minus wind and solar on the chart). That follows renewables instead of flattening total demand into a straight line. Flattening total demand still leaves midday oversupply and an evening gap; net load is the strain signal this site uses. Illustrative mix, not a real utility program.";
 
 type Props = {
   rows: EvRow[];
@@ -61,6 +84,10 @@ function activePreset(state: ShareState): PresetId {
 function formatMw(n: number): string {
   if (Math.abs(n) >= 10_000) return `${(n / 1000).toFixed(1)} GW`;
   return `${Math.round(n).toLocaleString()} MW`;
+}
+
+function rowsWithNet(rows: EvRow[], netMw: number[]): EvRow[] {
+  return rows.map((r, i) => ({ ...r, net_load_MW: netMw[i] ?? r.net_load_MW }));
 }
 
 function buildAdoptionTraces(
@@ -105,16 +132,20 @@ function buildAdoptionTraces(
     });
   }
 
+  const shiftPct = Math.round(result.participate * 100);
   traces.push({
     x: times,
     y: result.evLoads,
-    name: `EV (${Math.round(result.participate * 100)}% midday shift)`,
+    name:
+      shiftPct > 0
+        ? `EV (${shiftPct}% lowest-strain shift)`
+        : "EV (unmanaged CEC)",
     type: "scatter",
     mode: "lines",
     fill: "tozeroy",
     line: { color: "#1f7a4c", width: 1.5 },
     fillcolor: "rgba(31, 122, 76, 0.35)",
-    hovertemplate: "%{y:,.0f} MW<extra>EV shifted mix</extra>",
+    hovertemplate: "%{y:,.0f} MW<extra>EV mix</extra>",
   });
   traces.push({
     x: times,
@@ -150,6 +181,7 @@ export default function AdoptionPanel({
   const ldvOk = hasLdvTotal();
   const preset = activePreset(state);
   const todayShare = todayAdoptionShare();
+  const miles = PROVENANCE.milesPerDay;
 
   const fleetInput = useMemo(() => {
     if (state.scale != null) return { scale: state.scale };
@@ -174,57 +206,84 @@ export default function AdoptionPanel({
     [rows, state.scenario, fleetInput],
   );
 
-  const costs = useMemo(
-    () =>
-      touRows.length
-        ? computeCostComparison(
+  const shiftBridge = useMemo(() => {
+    const savings =
+      touRows.length > 0
+        ? mixVsCecSavings(
             rows,
-            state.scenario,
+            result.cecLoadsMw,
+            result.evLoadsMw,
             date,
             touRows,
-            state.cars,
+            state.scenario,
+            "EV2-A",
           )
-        : null,
-    [rows, state.scenario, date, touRows, state.cars],
-  );
-
-  const shiftBridge = useMemo(() => {
-    const savings = costs ? middayVsCecSavings(costs) : null;
+        : null;
     return buildShiftBridgeCallout({
       rampReliefMwPerHour: result.rampRelief,
       participate: state.participate,
       savingsYearlyPerCar: savings?.savingsYearlyPerCar ?? 0,
-      savingsPlan: savings?.plan ?? state.plan,
+      savingsPlan: savings?.plan ?? "EV2-A",
+      costFraming: "mixVsCec",
     });
-  }, [costs, result.rampRelief, state.participate, state.plan]);
+  }, [
+    rows,
+    result.cecLoadsMw,
+    result.evLoadsMw,
+    result.rampRelief,
+    state.participate,
+    state.scenario,
+    date,
+    touRows,
+  ]);
+
+  const batteryCompare = useMemo(() => {
+    const unmanagedNet = rows.map(
+      (r, i) => r.net_load_MW + resultUnmanaged.unmanagedEvLoads[i],
+    );
+    const mixNet = rows.map((r, i) => r.net_load_MW + result.evLoads[i]);
+    const todayPattern = estimateStorageToFlatten(
+      rowsWithNet(rows, unmanagedNet),
+    );
+    const optimizedShift = estimateStorageToFlatten(rowsWithNet(rows, mixNet));
+    return { todayPattern, optimizedShift };
+  }, [rows, result, resultUnmanaged]);
 
   const chart = useMemo(() => {
     const data = buildAdoptionTraces(rows, result);
     const rampAnn = buildRampAnnotation(
       rows.map((r, i) => ({ ...r, net_load_MW: result.netPlusEv[i] })),
     );
-    const base = buildLayout([], false, rampAnn ? [rampAnn] : []);
+    const base = basePlotlyLayout({
+      legendPlacement: "right",
+      margin: { t: 48, r: 150, b: 52, l: 60 },
+    });
+    const withShapes = buildLayout([], false, rampAnn ? [rampAnn] : []);
     return {
       data,
       layout: {
         ...base,
+        shapes: withShapes.shapes,
+        annotations: withShapes.annotations,
         title: {
           text: "Net load + EV charging",
           font: { size: 14 },
           x: 0,
           xanchor: "left" as const,
         },
-        margin: { ...(base.margin ?? {}), t: 56 },
         xaxis: {
           ...base.xaxis,
           title: {
             text: "Hour (US/Pacific)",
             font: { size: 11 },
           },
+          tickformat: "%-I %p",
+          dtick: 3 * 60 * 60 * 1000,
         },
         yaxis: {
           ...base.yaxis,
           title: { text: "MW", font: { size: 11 } },
+          rangemode: "tozero" as const,
         },
       },
     };
@@ -232,6 +291,8 @@ export default function AdoptionPanel({
 
   const scaleValue = state.scale != null ? state.scale : result.scale;
   const customPct = Math.round(state.adoption * 1000) / 10;
+  /** 50% / 100% CA cars & light trucks what-if (or custom at/above 50%). */
+  const largeFleetScaleUp = ldvOk && result.adoption >= 0.5 - 1e-9;
 
   const chipToday0 =
     preset === "today" && Math.abs(state.participate) < 1e-6;
@@ -289,18 +350,29 @@ export default function AdoptionPanel({
   return (
     <section className="adoption-panel" aria-label="Adoption stress test">
       <header className="hero hero-adoption">
-        <h1>When EVs charge matters as much as how many there are</h1>
+        <h1>
+          When EVs charge matters as much as how many there are
+        </h1>
         <p className="lede">
-          On a real CAISO day, the evening net-load climb is the hard window.
-          This page scales California plug-in charging and shifts a share into
-          midday to see how that changes coincidence with the ramp, and what
-          simplified PG&E energy $/car look like. Fleet presets are stress
-          arithmetic on today’s CEC shape, not forecasts of when the on-road
-          fleet turns over.
+          On a real <DefinedTerm id="caiso" /> day, the evening{" "}
+          <DefinedTerm id="netLoad" /> climb is the hard window. This page scales
+          California plug-in charging and shifts a share into{" "}
+          <DefinedTerm id="lowestStrain" /> to see how that changes coincidence
+          with the ramp, and what simplified PG&E energy $/car look like. Fleet
+          presets are a what-if scale-up on today&apos;s{" "}
+          <DefinedTerm id="cecShape" />, not forecasts of when the on-road fleet
+          turns over.
         </p>
       </header>
 
       <section className="chart-panel" aria-label="Net load plus EV">
+        <p className="chart-caption">
+          This is a real California grid day. The midday dip is plentiful solar;
+          the evening climb is when the grid has to ramp up fast. The green band
+          is EV charging. Moving charging into{" "}
+          <DefinedTerm id="lowestStrain" /> shows whether EVs add to that
+          evening climb or avoid it.
+        </p>
         <Plot
           data={chart.data}
           layout={{ ...chart.layout, autosize: true }}
@@ -309,13 +381,6 @@ export default function AdoptionPanel({
           useResizeHandler
         />
         <div className="chart-copy">
-          <p className="chart-narrative">
-            Change the controls below and the lines move. Try{" "}
-            <strong>50% CA LDV</strong> to grow the green band, then{" "}
-            <strong>50% midday shift</strong> to pull charging out of the
-            evening. Solid lines are the shift mix; dotted lines (when shift is
-            above zero) are unmanaged CEC at the same fleet.
-          </p>
           <div
             className="adoption-chart-chips"
             role="group"
@@ -353,9 +418,14 @@ export default function AdoptionPanel({
               disabled={!ldvOk}
               onClick={onHalfLdvShift}
             >
-              50% LDV · 50% shift
+              50% of CA cars · 50% shift
             </button>
           </div>
+          {largeFleetScaleUp ? (
+            <p className="field-hint fleet-scale-caveat">
+              {LARGE_FLEET_STRAIN_CAVEAT}
+            </p>
+          ) : null}
           <p className="chart-sources">
             {HONESTY} <Link to={`/methods${qs}`}>Methods</Link>
           </p>
@@ -366,6 +436,11 @@ export default function AdoptionPanel({
         className="callout callout-honesty callout-share"
         aria-label="Shift charging bridge"
       >
+        <p className="chart-caption">
+          Same daily charging energy, different hours. Left: how much this
+          illustrative shift eases the evening climb on this day. Right: PG&E
+          energy charges only for that same mix, not a full utility bill.
+        </p>
         <p className="callout-intro">{shiftBridge.intro}</p>
         {shiftBridge.showSplit ? (
           <div className="bridge-split">
@@ -383,6 +458,53 @@ export default function AdoptionPanel({
         ) : null}
         <p className="callout-claims">
           Illustrative grid relief · PG&E energy charges only ·{" "}
+          <Link to={`/methods${qs}`}>Methods</Link>
+        </p>
+      </aside>
+
+      <aside
+        className="callout callout-honesty battery-compare"
+        aria-label="Battery needed to flatten net load"
+      >
+        <p className="chart-caption">
+          How large a battery would need to be, in this back-of-envelope model,
+          to smooth this day&apos;s <DefinedTerm id="netLoad" /> with today&apos;s
+          charging pattern versus with more charging shifted to{" "}
+          <DefinedTerm id="lowestStrain" />. Not a procurement recommendation.
+        </p>
+        {batteryCompare.todayPattern && batteryCompare.optimizedShift ? (
+          <div className="bridge-split">
+            <div className="bridge-block">
+              <p className="cost-sublabel">Today&apos;s charging (unmanaged)</p>
+              <p className="bridge-value">
+                {formatGw(batteryCompare.todayPattern.powerMw)} ·{" "}
+                {formatGwh(batteryCompare.todayPattern.nameplateEnergyMwh)}
+              </p>
+              <p className="bridge-detail">
+                ~{batteryCompare.todayPattern.durationHours.toFixed(1)} h at
+                nameplate (back-of-envelope)
+              </p>
+            </div>
+            <div className="bridge-block">
+              <p className="cost-sublabel">With optimized shift</p>
+              <p className="bridge-value">
+                {formatGw(batteryCompare.optimizedShift.powerMw)} ·{" "}
+                {formatGwh(batteryCompare.optimizedShift.nameplateEnergyMwh)}
+              </p>
+              <p className="bridge-detail">
+                ~{batteryCompare.optimizedShift.durationHours.toFixed(1)} h at
+                nameplate (back-of-envelope)
+              </p>
+            </div>
+          </div>
+        ) : (
+          <p className="bridge-detail">
+            Not enough hours in the belly-to-evening window to size storage for
+            this day.
+          </p>
+        )}
+        <p className="callout-claims">
+          Back-of-envelope flatten on net + EV · not a procurement study ·{" "}
           <Link to={`/methods${qs}`}>Methods</Link>
         </p>
       </aside>
@@ -405,7 +527,18 @@ export default function AdoptionPanel({
         )}
 
         <fieldset className="field scenario">
-          <legend>Fleet</legend>
+          <legend className="legend-with-hint">
+            <span>Fleet</span>
+            <WhyHint label="Why this fleet control">
+              <p>
+                {FLEET_DISCLOSURE} <Cite id={["afdc", "ldv", "accIi"]} />
+              </p>
+              <p>{LARGE_FLEET_STRAIN_CAVEAT}</p>
+            </WhyHint>
+          </legend>
+          <p className="field-hint fleet-oneliner">
+            {FLEET_ONELINER} <Cite id="ldv" />
+          </p>
           <label className={preset === "today" ? "active" : undefined}>
             <input
               type="radio"
@@ -413,11 +546,11 @@ export default function AdoptionPanel({
               checked={preset === "today"}
               onChange={() => onTodayFleet()}
             />
-            Today (AFDC)
+            Today&apos;s plug-ins
           </label>
           <label
             className={preset === "half" ? "active" : undefined}
-            title={ldvOk ? undefined : "verify CEC LDV total"}
+            title={ldvOk ? undefined : "verify CEC light-duty total"}
           >
             <input
               type="radio"
@@ -426,11 +559,11 @@ export default function AdoptionPanel({
               disabled={!ldvOk}
               onChange={() => onAdoption(0.5)}
             />
-            50% CA LDV
+            50% of CA cars &amp; light trucks
           </label>
           <label
             className={preset === "full" ? "active" : undefined}
-            title={ldvOk ? undefined : "verify CEC LDV total"}
+            title={ldvOk ? undefined : "verify CEC light-duty total"}
           >
             <input
               type="radio"
@@ -439,109 +572,129 @@ export default function AdoptionPanel({
               disabled={!ldvOk}
               onChange={() => onAdoption(1)}
             />
-            100% CA LDV
+            100% of CA cars &amp; light trucks
           </label>
-          <label className={preset === "custom" ? "active" : undefined}>
-            <input
-              type="radio"
-              name="adoption-preset"
-              checked={preset === "custom"}
-              disabled={!ldvOk}
-              onChange={() => {
-                if (preset !== "custom") onAdoption(state.adoption);
-              }}
-            />
-            custom %
-          </label>
-          <p className="field-hint acc-ii-note">
-            <a
-              href={PROVENANCE.accIi.url}
-              target="_blank"
-              rel="noreferrer"
-            >
-              {PROVENANCE.accIi.name}
-            </a>{" "}
-            sets new light-duty ZEV sales shares (35% in 2026, 68% in 2030, 100%
-            by 2035). That is sales share, not on-road fleet share; vehicles stay
-            registered for years, so fleet share lags. The 50% / 100% LDV presets
-            here are stress scenarios, not timeline predictions.
-          </p>
+          {largeFleetScaleUp ? (
+            <p className="field-hint fleet-scale-caveat">
+              {LARGE_FLEET_STRAIN_CAVEAT}
+            </p>
+          ) : null}
         </fieldset>
 
         {!ldvOk && (
-          <p className="field-hint adoption-warn">verify CEC LDV total</p>
+          <p className="field-hint adoption-warn">
+            verify CEC light-duty vehicle total
+          </p>
         )}
 
-        {ldvOk && (
+        <details className="field advanced-fleet">
+          <summary>Advanced fleet inputs</summary>
+          {ldvOk && (
+            <label className="field">
+              <span>Custom % of CA cars &amp; light trucks</span>
+              <input
+                type="number"
+                min={0}
+                max={100}
+                step={0.1}
+                value={customPct}
+                disabled={!ldvOk}
+                onChange={(event) => {
+                  const pct = Number(event.target.value);
+                  if (!Number.isFinite(pct)) return;
+                  onAdoption(Math.min(100, Math.max(0, pct)) / 100);
+                }}
+              />
+              <span className="field-hint">
+                {todayShare != null && (
+                  <>
+                    Today ≈ {(todayShare * 100).toFixed(2)}% of CEC total (
+                    {N_LDV?.toLocaleString()})
+                  </>
+                )}
+              </span>
+            </label>
+          )}
           <label className="field">
-            <span>Custom % of CA LDV</span>
+            <span>× today&apos;s plug-ins</span>
             <input
               type="number"
               min={0}
-              max={100}
+              max={50}
               step={0.1}
-              value={customPct}
-              disabled={!ldvOk}
+              value={Math.round(scaleValue * 100) / 100}
               onChange={(event) => {
-                const pct = Number(event.target.value);
-                if (!Number.isFinite(pct)) return;
-                onAdoption(Math.min(100, Math.max(0, pct)) / 100);
+                const next = Number(event.target.value);
+                if (!Number.isFinite(next) || next < 0) return;
+                onScale(next);
               }}
             />
             <span className="field-hint">
-              {todayShare != null && (
-                <>
-                  Today ≈ {(todayShare * 100).toFixed(2)}% of CEC LDV (
-                  {N_LDV?.toLocaleString()})
-                </>
-              )}
+              1× = {N0.toLocaleString()} plug-ins on the road today
             </span>
           </label>
-        )}
+        </details>
 
-        <label className="field">
-          <span>× today (AFDC)</span>
-          <input
-            type="number"
-            min={0}
-            max={50}
-            step={0.1}
-            value={Math.round(scaleValue * 100) / 100}
-            onChange={(event) => {
-              const next = Number(event.target.value);
-              if (!Number.isFinite(next) || next < 0) return;
-              onScale(next);
-            }}
-          />
-          <span className="field-hint">
-            1× = {N0.toLocaleString()} plug-ins (AFDC{" "}
-            {PROVENANCE.population.year})
-          </span>
-        </label>
+        <fieldset className="field scenario miles-primary">
+          <legend className="legend-with-hint">
+            <span>Miles/day</span>
+            <WhyHint label="Why this miles assumption">
+              <p>
+                {MILES_PRIMARY_DISCLOSURE} <Cite id="milesPerDay" />
+              </p>
+            </WhyHint>
+          </legend>
+          <label className={state.scenario === "mid" ? "active" : undefined}>
+            <input
+              type="radio"
+              name="adoption-scenario"
+              value="mid"
+              checked={state.scenario === "mid"}
+              onChange={() => onScenario("mid")}
+            />
+            {miles.primaryMiles} mi/day (CA average, FHWA 2023)
+            <Cite id="milesPerDay" />
+          </label>
+        </fieldset>
 
-        <fieldset className="field scenario">
-          <legend>Miles/day</legend>
-          {SCENARIOS.map((item) => (
-            <label
-              key={item}
-              className={state.scenario === item ? "active" : undefined}
-            >
-              <input
-                type="radio"
-                name="adoption-scenario"
-                value={item}
-                checked={state.scenario === item}
-                onChange={() => onScenario(item)}
-              />
-              {SCENARIO_META[item].label} ({SCENARIO_META[item].miles} mi)
-            </label>
-          ))}
+        <fieldset className="field scenario miles-secondary">
+          <legend className="legend-with-hint">
+            <span>What if EV drivers differ</span>
+            <WhyHint label="Why EV-study miles differ">
+              <p>{MILES_SECONDARY_NOTE}</p>
+            </WhyHint>
+          </legend>
+          <label className={state.scenario === "low" ? "active" : undefined}>
+            <input
+              type="radio"
+              name="adoption-scenario"
+              value="low"
+              checked={state.scenario === "low"}
+              onChange={() => onScenario("low")}
+            />
+            {SCENARIO_META.low.miles} mi/day
+          </label>
+          <label className={state.scenario === "high" ? "active" : undefined}>
+            <input
+              type="radio"
+              name="adoption-scenario"
+              value="high"
+              checked={state.scenario === "high"}
+              onChange={() => onScenario("high")}
+            />
+            {SCENARIO_META.high.miles} mi/day
+          </label>
         </fieldset>
 
         <label className="field">
-          <span>
-            % of charging shifted to midday (
-            {Math.round(state.participate * 100)}%)
+          <span className="legend-with-hint">
+            <span>
+              % shifted to <DefinedTerm id="lowestStrain" /> (
+              {Math.round(state.participate * 100)}%)
+            </span>
+            <WhyHint label="Why lowest-strain hours">
+              <p>{SHIFT_DISCLOSURE}</p>
+            </WhyHint>
           </span>
           <input
             type="range"
@@ -554,7 +707,8 @@ export default function AdoptionPanel({
             }
           />
           <span className="field-hint">
-            Share of daily energy on the midday shape.
+            Same daily kWh; hours weighted toward this day&apos;s lowest{" "}
+            <DefinedTerm id="caiso" /> <DefinedTerm id="netLoad" />.
             {resultUnmanaged.ramp && result.ramp ? (
               <>
                 {" "}
@@ -569,7 +723,8 @@ export default function AdoptionPanel({
             ) : null}
           </span>
           <button type="button" className="shift-preset" onClick={onShowShift}>
-            Show the shift ({Math.round(SHOW_SHIFT_PARTICIPATE * 100)}% midday)
+            Show the shift ({Math.round(SHOW_SHIFT_PARTICIPATE * 100)}%
+            lowest-strain)
           </button>
         </label>
       </section>
@@ -587,6 +742,12 @@ export default function AdoptionPanel({
         className="chart-panel"
         aria-label="Data center peak share versus EV stress peak"
       >
+        <p className="chart-caption">
+          Data centers are a real load on the system. CEC&apos;s forecast still
+          treats EV charging as a larger driver of California peak demand growth
+          through 2045. Bars are context, not an apples-to-apples forecast match
+          to the EV stress peak.
+        </p>
         <Plot
           data={dcPeakChart.data}
           layout={{ ...dcPeakChart.layout, autosize: true }}
@@ -595,12 +756,6 @@ export default function AdoptionPanel({
           useResizeHandler
         />
         <div className="chart-copy">
-          <p className="chart-narrative">
-            CEC data-center figures are peak demand share of CAISO system peak,
-            not annual energy and not a fuel-mix pie. The EV bar is this page’s
-            scaled peak charging MW (stress arithmetic on today’s CEC shape),
-            Weak as a fleet forecast.
-          </p>
           <p className="chart-sources">
             <a
               href={PROVENANCE.dataCenters.url}
@@ -609,8 +764,9 @@ export default function AdoptionPanel({
             >
               {PROVENANCE.dataCenters.source}
             </a>
+            <Cite id="dataCenters" />
             {" · "}
-            {PROVENANCE.dataCenters.forecast2040Label} · EV bar C6
+            {PROVENANCE.dataCenters.forecast2040Label}
           </p>
         </div>
       </section>

@@ -2,14 +2,14 @@
  * Adoption + managed-participation stress math (MATH.md §3b).
  * Pure TS for the /adoption UI — no Plotly, no page chrome.
  *
- * Scales CEC EV load by fleet N / N_0, builds midday managed shape,
- * mixes (1-p)·CEC + p·midday, and reports peak / energy / ramp metrics.
+ * Scales CEC EV load by fleet N / N_0, builds net-load-weighted optimized
+ * shape, mixes (1-p)·CEC + p·optimized, and reports peak / energy / ramp metrics.
  */
 import type { EvRow, Scenario } from "./types";
 import { PROVENANCE } from "./provenance";
 import {
   cecEvLoads,
-  managedEvLoads,
+  netLoadOptimizedEvLoads,
   peakEvMw as maxEvMw,
 } from "./managedCharging";
 import { computeEveningRamp, type EveningRamp } from "./insights";
@@ -118,16 +118,16 @@ export function resolveFleetFromScale(scale: number): ResolvedFleet {
 }
 
 /**
- * Mix unmanaged CEC with midday managed: (1-p)·cec + p·midday.
+ * Mix unmanaged CEC with optimized (lowest-strain) shape: (1-p)·cec + p·opt.
  * @param participation p ∈ [0,1] (clamped).
  */
 export function mixEvLoads(
   cecLoads: number[],
-  middayLoads: number[],
+  optimizedLoads: number[],
   participation: number,
 ): number[] {
   const p = clamp01(participation);
-  return cecLoads.map((c, i) => (1 - p) * c + p * (middayLoads[i] ?? 0));
+  return cecLoads.map((c, i) => (1 - p) * c + p * (optimizedLoads[i] ?? 0));
 }
 
 /** Scale a baseline (N_0) hourly series by fleetN / N_0. */
@@ -169,8 +169,11 @@ export type AdoptionStressResult = {
   cecLoadsMw: number[];
   /** Alias for ghost unmanaged series */
   unmanagedEvLoads: number[];
-  /** Hourly midday managed at this fleet (same daily energy as CEC) */
+  /** Hourly net-load-weighted optimized at this fleet (same daily energy as CEC) */
+  optimizedLoadsMw: number[];
+  /** @deprecated Alias of optimizedLoadsMw (pre-rename midday field) */
   middayLoadsMw: number[];
+  /** Alias of optimizedLoadsMw */
   managedEvLoads: number[];
   /** net_load + mixed EV */
   netPlusEv: number[];
@@ -199,7 +202,7 @@ export type AdoptionStressResult = {
 
 /**
  * Compute adoption stress metrics for a day.
- * Scales CEC EV columns by N/N_0, rebuilds midday via managedCharging,
+ * Scales CEC EV columns by N/N_0, rebuilds optimized via netLoadOptimizedEvLoads,
  * mixes with participation p, and measures energy / peak / evening ramp.
  */
 export function computeAdoptionStress(
@@ -218,11 +221,11 @@ export function computeAdoptionStress(
   );
 
   const cecLoadsMw = scaleLoadsToFleet(cecEvLoads(rows, scen), fleetN);
-  const middayLoadsMw = scaleLoadsToFleet(
-    managedEvLoads(rows, scen),
+  const optimizedLoadsMw = scaleLoadsToFleet(
+    netLoadOptimizedEvLoads(rows, scen),
     fleetN,
   );
-  const evLoadsMw = mixEvLoads(cecLoadsMw, middayLoadsMw, participation);
+  const evLoadsMw = mixEvLoads(cecLoadsMw, optimizedLoadsMw, participation);
 
   const evEnergyMwh = sum(evLoadsMw);
   const caisoEnergyMwh = sum(rows.map((r) => r.load_MW));
@@ -246,8 +249,9 @@ export function computeAdoptionStress(
     evLoads: evLoadsMw,
     cecLoadsMw,
     unmanagedEvLoads: cecLoadsMw,
-    middayLoadsMw,
-    managedEvLoads: middayLoadsMw,
+    optimizedLoadsMw,
+    middayLoadsMw: optimizedLoadsMw,
+    managedEvLoads: optimizedLoadsMw,
     netPlusEv: netPlusMixed,
     peakEvMw: maxEvMw(evLoadsMw),
     evEnergyMwh,

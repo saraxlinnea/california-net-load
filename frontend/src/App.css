@@ -484,6 +484,217 @@ a:hover {
   color: var(--muted);
 }
 
+.fleet-oneliner {
+  margin: 0.15rem 0 0.35rem;
+  font-size: 0.82rem;
+}
+
+.fleet-scale-caveat {
+  margin: 0.5rem 0 0;
+  max-width: 40rem;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+.advanced-fleet {
+  grid-column: 1 / -1;
+  margin: 0.25rem 0 0;
+  max-width: 40rem;
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+
+.advanced-fleet > summary {
+  cursor: pointer;
+  color: var(--ink);
+  font-size: 0.88rem;
+}
+
+.advanced-fleet[open] > summary {
+  margin-bottom: 0.65rem;
+}
+
+.advanced-fleet .field {
+  display: block;
+  margin-top: 0.65rem;
+}
+
+.legend-with-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.why-hint {
+  display: inline-block;
+  position: relative;
+  vertical-align: middle;
+}
+
+.why-hint-summary {
+  list-style: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.15rem;
+  height: 1.15rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--muted);
+  background: var(--panel);
+}
+
+.why-hint-summary::-webkit-details-marker {
+  display: none;
+}
+
+.why-hint-summary:hover {
+  color: var(--ink);
+  border-color: var(--muted);
+}
+
+.why-hint[open] .why-hint-summary {
+  color: var(--ink);
+  border-color: var(--ink);
+}
+
+.why-hint-body {
+  position: absolute;
+  z-index: 6;
+  top: calc(100% + 0.35rem);
+  left: 0;
+  width: min(22rem, 78vw);
+  padding: 0.65rem 0.75rem;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  box-shadow: 0 4px 14px rgba(26, 29, 33, 0.08);
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 400;
+  line-height: 1.45;
+}
+
+.why-hint-body p {
+  margin: 0;
+}
+
+.why-hint-body p + p {
+  margin-top: 0.55rem;
+}
+
+.cite-group {
+  white-space: nowrap;
+}
+
+.cite-ref {
+  margin-left: 0.12em;
+  color: var(--accent-2);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.cite-ref:hover {
+  color: var(--ink);
+  text-decoration: underline;
+}
+
+.cite-ref sup {
+  font-size: 0.7em;
+  line-height: 0;
+}
+
+.defined-term {
+  position: relative;
+  display: inline;
+  cursor: help;
+  border-bottom: 1px dotted rgba(26, 29, 33, 0.35);
+  outline: none;
+}
+
+.defined-term:focus-visible {
+  border-bottom-color: var(--accent-2);
+}
+
+.defined-term-tip {
+  position: absolute;
+  z-index: 8;
+  left: 0;
+  bottom: calc(100% + 0.4rem);
+  width: min(18rem, 70vw);
+  padding: 0.5rem 0.65rem;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  box-shadow: 0 4px 14px rgba(26, 29, 33, 0.1);
+  color: var(--muted);
+  font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+  font-size: 0.78rem;
+  font-weight: 400;
+  line-height: 1.4;
+  letter-spacing: normal;
+  text-transform: none;
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s ease;
+}
+
+.defined-term:hover .defined-term-tip,
+.defined-term:focus .defined-term-tip,
+.defined-term:focus-within .defined-term-tip {
+  visibility: visible;
+  opacity: 1;
+}
+
+.site-brand .defined-term {
+  border-bottom-color: rgba(26, 29, 33, 0.25);
+}
+
+.control-disclosure {
+  margin: 0.45rem 0 0.25rem;
+  max-width: 40rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.control-disclosure summary {
+  cursor: pointer;
+  color: var(--ink);
+  font-size: 0.82rem;
+}
+
+.control-disclosure p {
+  margin: 0.4rem 0 0;
+  line-height: 1.45;
+}
+
+.miles-primary label {
+  font-weight: 550;
+}
+
+.miles-secondary {
+  opacity: 0.92;
+}
+
+.miles-secondary legend,
+.miles-secondary label,
+.miles-secondary .field-hint {
+  font-size: 0.82rem;
+}
+
+.miles-secondary label {
+  padding: 0.25rem 0.45rem;
+}
+
+.battery-compare {
+  margin-top: 0.85rem;
+}
+
 .shift-preset {
   display: inline-block;
   margin-top: 0.45rem;
@@ -598,6 +809,18 @@ a:hover {
 .chart-sources {
   margin: 0;
   color: var(--muted);
+}
+
+.chart-caption {
+  margin: 0 0 0.75rem;
+  max-width: 52rem;
+  color: var(--ink);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.callout .chart-caption {
+  margin-bottom: 0.65rem;
 }
 
 .chart-narrative {
@@ -1063,6 +1286,21 @@ a:hover {
   margin: 0.5rem 0 0;
   padding-left: 1.2rem;
   color: var(--muted);
+}
+
+.methods-cite-list.numbered {
+  list-style: none;
+  padding-left: 0;
+}
+
+.methods-cite-list.numbered > li {
+  scroll-margin-top: 4.5rem;
+}
+
+.methods-cite-intro {
+  margin: 0.35rem 0 0.75rem;
+  color: var(--muted);
+  font-size: 0.9rem;
 }
 
 .methods-cite-list li + li {

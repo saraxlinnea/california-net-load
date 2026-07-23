@@ -41,7 +41,7 @@ export function showShiftSharePatch(days: DayOption[]): Partial<ShareState> {
   };
 }
 
-/** 50% CA LDV + 50% midday shift on the same LinkedIn day (atomic URL). */
+/** 50% CA LDV + 50% lowest-strain shift on the same LinkedIn day (atomic URL). */
 export function halfLdvShiftSharePatch(days: DayOption[]): Partial<ShareState> {
   const base = showShiftSharePatch(days);
   let scale: number | null = null;

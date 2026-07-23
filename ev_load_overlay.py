@@ -27,11 +27,11 @@ OUT_DIR = Path("data/processed")
 # kWh/mile: converged estimate from DOE FOTW / EPA / NREL (~0.30)
 KWH_PER_MILE = 0.30
 
-# miles/day: contested in literature (~2x spread)
+# miles/day: mid = FHWA CA statewide average; low/high = EV-study what-ifs
+# Mid: FHWA Highway Statistics 2023 Table VM-2 → ~27.9 mi/day
 # Low: GW/NREL odometer study ~20 mi/day
-# Mid: NHTS-based average ~27 mi/day
 # High: UC Davis ITS newer EVs ~33 mi/day
-MILES_PER_DAY_SCENARIOS = {"low": 20, "mid": 27, "high": 33}
+MILES_PER_DAY_SCENARIOS = {"low": 20, "mid": 27.9, "high": 33}
 
 # AFDC 2024, BEV (1,533,900) + PHEV (447,100) — matches CEC PEV definition
 N_EV = 1_981_000

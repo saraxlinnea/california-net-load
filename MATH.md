@@ -58,14 +58,14 @@ E_{\text{day}}\;(\text{MWh}) = \frac{N_{\text{EV}} \times m \times k}{1000}
 | Symbol | Value | Source |
 |---|---|---|
 | \(N_{\text{EV}}\) | 1,981,000 | AFDC 2024 BEV + PHEV |
-| \(m\) | 20 / 27 / 33 mi/day | low / mid / high scenarios |
+| \(m\) | **27.9** mi/day primary (FHWA 2023 CA average); 20 / 33 what-if | mid / low / high scenarios |
 | \(k\) | 0.30 kWh/mi | DOE / EPA / NREL planning range |
 
 \[
 \text{net\_load\_plus\_ev}_h = \text{net\_load}_h + \text{ev\_load\_MW}_h
 \]
 
-**Validation:** mid scenario daily energy ≈ CEC’s own summer-weekday `raw_mw` sum (~16,055 MWh) → ~1.00×.
+**Validation:** at the former NHTS-era mid (27 mi/day), daily energy ≈ CEC’s own summer-weekday `raw_mw` sum (~16,055 MWh) → ~1.00×. Primary mid is now **27.9** mi/day (FHWA), so modeled energy at \(N_0\) is ~16,581 MWh/day (~3.3% higher).
 
 ---
 
@@ -105,21 +105,41 @@ Share of that CAISO day’s energy:
 \%_{\text{CAISO}} = \frac{\sum_h \text{ev}_h(N)}{\sum_h \text{load}_h} \times 100
 \]
 
-Managed participation \(p \in [0,1]\) (illustrative): keep daily energy, mix unmanaged CEC with midday solar DR:
+Managed participation \(p \in [0,1]\) (illustrative, **Adoption**): keep daily energy, mix unmanaged CEC with a **net-load-weighted** (lowest-strain) shape:
 
 \[
-\text{ev}^{\text{mix}}_h = (1-p)\,\text{ev}^{\text{CEC}}_h + p\,\text{ev}^{\text{midday}}_h
+\text{ev}^{\text{mix}}_h = (1-p)\,\text{ev}^{\text{CEC}}_h + p\,\text{ev}^{\text{opt}}_h
 \]
+
+The Cost page still uses a separate midday solar DR shape for its schedule bill story (see §4).
 
 **Label required:** illustrative scale-up; not a forecast, RA study, or distribution analysis.
 
 ---
 
-## 4. Managed charging shape (illustrative DR)
+## 4. Charging shapes (illustrative)
+
+### 4a. Net-load-weighted (Adoption stress mix)
 
 Unmanaged loads \(\text{ev}_h\) come from the CEC shape (§3).
 
-Managed loads keep the **same daily energy** \(E = \sum_h \text{ev}_h\), redistributed
+Optimized loads keep the **same daily energy** \(E = \sum_h \text{ev}_h\), redistributed
+toward hours when this day’s CAISO net load is lowest:
+
+\[
+w_h = \max(\text{net}_{\max} - \text{net}_h,\, 0) + \varepsilon
+\]
+
+\[
+\text{ev}^{\text{opt}}_h = E \times \frac{w_h}{\sum_j w_j}
+\]
+
+\(\varepsilon > 0\) keeps every hour eligible if net load is flat. **Label as illustrative** —
+not a utility DR schedule. This follows renewables (low net load) rather than flattening total demand.
+
+### 4b. Midday solar window (Cost page schedules)
+
+Cost-page “midday” loads keep the same daily energy \(E\), redistributed
 into hours 10–15 (inclusive), weighted by solar:
 
 \[
