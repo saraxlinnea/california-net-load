@@ -29,6 +29,7 @@ type Props = {
   onToggle: (key: keyof ChartToggles, value: boolean) => void;
 };
 
+/** Single Cost-page control panel: day, miles, schedule, plan, cars. */
 export default function OverviewControls({
   days,
   state,
@@ -41,7 +42,10 @@ export default function OverviewControls({
   onToggle,
 }: Props) {
   return (
-    <section className="controls" aria-label="Chart controls">
+    <section
+      className="controls controls-cost"
+      aria-label="Cost chart and schedule controls"
+    >
       <label className="field">
         <span>Day</span>
         <select
@@ -56,42 +60,55 @@ export default function OverviewControls({
         </select>
       </label>
 
-      <fieldset className="field scenario">
-        <legend>Miles/day</legend>
-        {SCENARIOS.map((item) => (
-          <label
-            key={item}
-            className={state.scenario === item ? "active" : undefined}
-          >
-            <input
-              type="radio"
-              name="scenario"
-              value={item}
-              checked={state.scenario === item}
-              onChange={() => onScenario(item)}
-            />
-            {SCENARIO_META[item].label} ({SCENARIO_META[item].miles} mi)
-          </label>
-        ))}
-      </fieldset>
+      <div className="field chip-field">
+        <span>Miles/day</span>
+        <div
+          className="adoption-chart-chips"
+          role="group"
+          aria-label="Miles per day"
+        >
+          {SCENARIOS.map((item) => (
+            <button
+              key={item}
+              type="button"
+              className={
+                state.scenario === item
+                  ? "shift-preset chip-active"
+                  : "shift-preset"
+              }
+              aria-pressed={state.scenario === item}
+              onClick={() => onScenario(item)}
+            >
+              {item === "mid"
+                ? `${SCENARIO_META[item].miles} mi (CA avg)`
+                : `${SCENARIO_META[item].miles} mi`}
+            </button>
+          ))}
+        </div>
+      </div>
 
-      <fieldset className="field scenario">
-        <legend>Charging schedule</legend>
-        {MODES.map((mode) => (
-          <label
-            key={mode}
-            className={state.mode === mode ? "active" : undefined}
-          >
-            <input
-              type="radio"
-              name="charging"
-              checked={state.mode === mode}
-              onChange={() => onMode(mode)}
-            />
-            {CHARGING_MODE_LABELS[mode]}
-          </label>
-        ))}
-      </fieldset>
+      <div className="field chip-field">
+        <span>Charging schedule</span>
+        <div
+          className="adoption-chart-chips"
+          role="group"
+          aria-label="Charging schedule"
+        >
+          {MODES.map((mode) => (
+            <button
+              key={mode}
+              type="button"
+              className={
+                state.mode === mode ? "shift-preset chip-active" : "shift-preset"
+              }
+              aria-pressed={state.mode === mode}
+              onClick={() => onMode(mode)}
+            >
+              {CHARGING_MODE_LABELS[mode]}
+            </button>
+          ))}
+        </div>
+      </div>
 
       <label className="field">
         <span>PG&E plan</span>

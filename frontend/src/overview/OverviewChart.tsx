@@ -1,9 +1,8 @@
-import Plot from "react-plotly.js";
+import AnimatedPlot from "../AnimatedPlot";
 import type { Data, Layout } from "plotly.js";
 import { DefinedTerm } from "../DefinedTerm";
 import type { EveningRamp } from "../insights";
 import { SIMPLIFIED_MODEL } from "../insights";
-import { PLOTLY_CONFIG } from "../plotlyConfig";
 import { SOURCE_FOOTER } from "../provenance";
 
 type Props = {
@@ -12,6 +11,8 @@ type Props = {
   hasRows: boolean;
   chart: { data: Data[]; layout: Partial<Layout> } | null;
   ramp: EveningRamp | null;
+  /** Numeric three-timings detail for this CAISO day (from buildThreeClocksCallout). */
+  dayTimingsDetail?: string | null;
 };
 
 export default function OverviewChart({
@@ -20,24 +21,28 @@ export default function OverviewChart({
   hasRows,
   chart,
   ramp,
+  dayTimingsDetail = null,
 }: Props) {
   return (
     <section className="chart-panel">
       <p className="chart-caption">
-        This page is about the bill clock: PG&E time-of-use prices. Those hours
-        are not the same as <DefinedTerm id="caiso" />
-        &apos;s evening <DefinedTerm id="netLoad" /> climb. Use Adoption to see
-        grid timing; use this page for schedule cost.
+        This chart shows three timings that often disagree: the evening{" "}
+        <DefinedTerm id="netLoad">net-load</DefinedTerm> climb (ramp label, if
+        on), when the EV charging curve peaks, and PG&E&apos;s TOU price bands or
+        rate line (if on). Bill hours are not the same as grid-stress hours. Use
+        Fleet for fleet scale and evening ramp; use this page for schedule
+        cost.
       </p>
       {error && <p className="error">{error}</p>}
+      {loading && !hasRows && (
+        <div className="chart-skeleton chart-skeleton-block" aria-hidden="true" />
+      )}
       {loading && !hasRows && <p className="muted">Loading…</p>}
       {chart && (
-        <Plot
+        <AnimatedPlot
           data={chart.data}
-          layout={{ ...chart.layout, autosize: true }}
-          config={PLOTLY_CONFIG}
-          style={{ width: "100%", height: "520px" }}
-          useResizeHandler
+          layout={chart.layout}
+          style={{ width: "100%", height: "600px" }}
         />
       )}
       <div className="chart-copy">
@@ -57,6 +62,11 @@ export default function OverviewChart({
             </>
           )}
         </p>
+        {dayTimingsDetail ? (
+          <p className="chart-narrative">
+            <strong>On this day:</strong> {dayTimingsDetail}
+          </p>
+        ) : null}
         <p className="chart-sources">{SOURCE_FOOTER}</p>
         <p className="chart-sources">{SIMPLIFIED_MODEL}</p>
       </div>

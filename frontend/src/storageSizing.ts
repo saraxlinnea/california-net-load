@@ -3,9 +3,11 @@ import { computeEveningRamp } from "./insights";
 
 export const STORAGE_ASSUMPTIONS = [
   "Back-of-envelope only, not a resource adequacy or interconnection study.",
-  "Target flat net-load = mean net load over 9 a.m. to 10 p.m. (belly to evening window).",
+  "Target flat net-load = mean net load over hours 09–21 inclusive (9 a.m. through 9 p.m.).",
   "Charge when net < target; discharge when net > target (perfect foresight, 1-hour steps).",
-  "Usable energy ≈ max(charge MWh, discharge MWh); nameplate energy = usable / η with η=90% round-trip.",
+  "This is not a chronological SOC dispatch: hour order and intermediate state-of-charge limits are not simulated, so the implied path may be infeasible.",
+  "Primary energy E = max(charge MWh, discharge MWh) from a lossless shift (bars match this).",
+  "Optional nameplate uplift E/η with η=90% RTE is shown separately; bars are not loss-adjusted.",
   "Power rating = max |net − target| in the window (1-hour average MW).",
 ].join(" ");
 
@@ -15,10 +17,15 @@ export type StorageEstimate = {
   windowEndHour: number;
   chargeMwh: number;
   dischargeMwh: number;
+  /** Lossless shift energy (primary illustrative E). */
   usableEnergyMwh: number;
+  /** E / η nameplate uplift (secondary; bars remain lossless). */
   nameplateEnergyMwh: number;
   powerMw: number;
+  /** Duration from lossless E ÷ power. */
   durationHours: number;
+  /** Duration if using nameplate energy ÷ power. */
+  nameplateDurationHours: number;
   roundTripEfficiency: number;
   bellyMw: number;
   peakMw: number;
@@ -44,6 +51,8 @@ export type StorageFlattenSeries = {
 
 /**
  * Size a BESS to flatten net load toward the mean over the belly→evening window.
+ * Charge/discharge energy are lossless (sum to ~equal in a closed window).
+ * Nameplate = usable/η is an optional uplift, not applied to the path bars.
  */
 export function estimateStorageToFlatten(rows: EvRow[]): StorageEstimate | null {
   if (!rows.length) return null;
@@ -67,7 +76,9 @@ export function estimateStorageToFlatten(rows: EvRow[]): StorageEstimate | null 
 
   const usableEnergyMwh = Math.max(chargeMwh, dischargeMwh);
   const nameplateEnergyMwh = usableEnergyMwh / RTE;
-  const durationHours = powerMw > 0 ? nameplateEnergyMwh / powerMw : 0;
+  const durationHours = powerMw > 0 ? usableEnergyMwh / powerMw : 0;
+  const nameplateDurationHours =
+    powerMw > 0 ? nameplateEnergyMwh / powerMw : 0;
 
   const belly = window.reduce((b, r) =>
     r.net_load_MW < b.net_load_MW ? r : b,
@@ -87,6 +98,7 @@ export function estimateStorageToFlatten(rows: EvRow[]): StorageEstimate | null 
     nameplateEnergyMwh,
     powerMw,
     durationHours,
+    nameplateDurationHours,
     roundTripEfficiency: RTE,
     bellyMw: belly.net_load_MW,
     peakMw: peak.net_load_MW,

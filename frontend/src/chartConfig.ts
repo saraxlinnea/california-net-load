@@ -28,14 +28,18 @@ export const PLOTLY_FONT =
 export type BasePlotlyOpts = {
   margin?: { t?: number; r?: number; b?: number; l?: number; pad?: number };
   showLegend?: boolean;
-  /** Dense multi-trace charts (Cost) use a right legend; default is top horizontal. */
-  legendPlacement?: "top" | "right";
+  /**
+   * Legend placement. Dense multi-trace charts use "bottom" (horizontal under
+   * the plot). Avoid "top" when a chart title is present (title collision).
+   * "right" kept only for rare vertical needs.
+   */
+  legendPlacement?: "top" | "bottom" | "right";
 };
 
 /** Shared Plotly chrome: transparent paper/plot, quiet legend + grids. */
 export function basePlotlyLayout(opts: BasePlotlyOpts = {}): Partial<Layout> {
   const showLegend = opts.showLegend !== false;
-  const legendPlacement = opts.legendPlacement ?? "top";
+  const legendPlacement = opts.legendPlacement ?? "bottom";
   const legend =
     !showLegend
       ? { orientation: "h" as const }
@@ -46,23 +50,40 @@ export function basePlotlyLayout(opts: BasePlotlyOpts = {}): Partial<Layout> {
             y: 0.5,
             bgcolor: "rgba(0,0,0,0)",
             borderwidth: 0,
-            font: { size: 10, color: PLOTLY_MUTED },
+            font: { size: 11, color: PLOTLY_MUTED },
           }
-        : {
-            orientation: "h" as const,
-            y: 1.12,
-            x: 0,
-            bgcolor: "rgba(0,0,0,0)",
-            borderwidth: 0,
-            font: { size: 10, color: PLOTLY_MUTED },
-          };
+        : legendPlacement === "top"
+          ? {
+              orientation: "h" as const,
+              y: 1.12,
+              x: 0,
+              bgcolor: "rgba(0,0,0,0)",
+              borderwidth: 0,
+              font: { size: 11, color: PLOTLY_MUTED },
+            }
+          : {
+              /* bottom: horizontal under the plot; wraps to extra rows as needed */
+              orientation: "h" as const,
+              y: -0.28,
+              yanchor: "top" as const,
+              x: 0,
+              xanchor: "left" as const,
+              bgcolor: "rgba(0,0,0,0)",
+              borderwidth: 0,
+              font: { size: 11, color: PLOTLY_MUTED },
+              tracegroupgap: 10,
+            };
+  const bottomLegend = showLegend && legendPlacement === "bottom";
+  const rightLegend = showLegend && legendPlacement === "right";
+  const userMargin = opts.margin ?? {};
   return {
     margin: {
-      t: 40,
-      r: legendPlacement === "right" ? 140 : 24,
-      b: 52,
-      l: 60,
-      ...(opts.margin ?? {}),
+      t: userMargin.t ?? (bottomLegend ? 56 : 40),
+      r: userMargin.r ?? (rightLegend ? 140 : 24),
+      /* Keep room under the plot for a wrapping horizontal legend + x-axis title. */
+      b: Math.max(bottomLegend ? 140 : 52, userMargin.b ?? 0),
+      l: userMargin.l ?? 60,
+      ...(userMargin.pad != null ? { pad: userMargin.pad } : {}),
     },
     paper_bgcolor: "rgba(0,0,0,0)",
     plot_bgcolor: "rgba(0,0,0,0)",
@@ -366,18 +387,19 @@ export function buildLayout(
   showTouRates: boolean,
   annotations: Array<Partial<Annotations>> = [],
 ): Partial<Layout> {
-  const dense = showTouRates;
   const base = basePlotlyLayout({
-    legendPlacement: dense ? "right" : "top",
-    margin: dense
-      ? { t: 48, r: 160, b: 52, l: 60 }
-      : { t: 40, r: 24, b: 52, l: 60 },
+    legendPlacement: "bottom",
+    margin: {
+      t: 56,
+      r: showTouRates ? 72 : 24,
+      b: 140,
+      l: 60,
+    },
   });
   const layout: Partial<Layout> = {
     ...base,
     xaxis: {
       ...base.xaxis,
-      ...(dense ? { domain: [0, 0.78] } : {}),
       title: { text: "Hour (US/Pacific)", font: { size: 11, color: PLOTLY_MUTED } },
       tickformat: "%-I %p",
       dtick: 3 * 60 * 60 * 1000,

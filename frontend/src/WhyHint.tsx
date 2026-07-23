@@ -39,15 +39,26 @@ export function Cite({ id }: CiteProps) {
 type WhyHintProps = {
   /** Accessible name; summary shows "?" by default. */
   label?: string;
+  /** Optional visible summary text instead of "?" (e.g. "Explain"). */
+  summaryText?: string;
   children: ReactNode;
 };
 
 /** Collapsed-by-default progressive disclosure for control explanations. */
-export function WhyHint({ label = "Why this control", children }: WhyHintProps) {
+export function WhyHint({
+  label = "Why this control",
+  summaryText,
+  children,
+}: WhyHintProps) {
   return (
-    <details className="why-hint">
-      <summary className="why-hint-summary" aria-label={label}>
-        ?
+    <details className={`why-hint${summaryText ? " why-hint-text" : ""}`}>
+      <summary
+        className={
+          summaryText ? "why-hint-summary why-hint-summary-text" : "why-hint-summary"
+        }
+        aria-label={label}
+      >
+        {summaryText ?? "?"}
       </summary>
       <div className="why-hint-body">{children}</div>
     </details>

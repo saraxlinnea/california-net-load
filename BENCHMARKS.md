@@ -25,6 +25,57 @@ Peak demand share of CAISO system peak. **Not** annual end-use energy share; do 
 
 Forecast only (not current): CEC Planning Forecast projects ~4,500 MW / ~9% of peak by 2040 (same Data Centers page). Do not present as today’s share.
 
+### CED 2025 matched EV vs data-center peak contribution (Fleet four-bar)
+
+Primary: CED 2025 Peak Forecast TN 268124, `annual_peaks`, `TAC=CAISO`, `SCENARIO=Planning_Scenario`. EV = LIGHT_EV + MEDIUM_HEAVY_EV + AATE_LDV + AATE_MDHD. Companion Form 11c workbook in `data/raw/`.
+
+| Metric | 2025 | 2045 | Δ | Source | Status |
+|---|---:|---:|---:|---|---|
+| Electric vehicles at coincident peak | **132 MW** | **8,388 MW** | **+8,256 MW** | Peak Forecast `annual_peaks` | **Confirmed** — read from workbook 2026-07-23 |
+| Data centers at coincident peak | **96 MW** | **4,817 MW** | **+4,721 MW** | Same rows, `DATA_CENTER` | **Confirmed** — matched hour/scenario |
+| Peak hour (CEC coincident peak) | Sept 3, 5pm | Sept 6, 6pm | — | Same rows (`MONTH`/`DAY`/`HOUR`) | **Confirmed** — each year’s own peak hour |
+
+Cross-check: Item 6 slide 10 growth bars (+8,234 EV / +4,721 DC) closely match these deltas. Locked in `PROVENANCE.ieprDemandForecast.matchedPeakLevels2025Vs2045`; extract `data/processed/ced_2025_peak_ev_dc_caiso_planning.csv`.
+
+Do **not** mix these with the Data Centers topic-page levels (~1,000 MW early 2026 / ~4,500 MW ~2040): different framing and end year.
+
+### CED managed sales by sector (Fleet stacked bars, GWh)
+
+Source: `data/raw/i25_Managed_Sales_by_Sector_and_Zone_Planning_Library_ada.xlsx`.  
+`planning_sales = baseline_sales_mid + aaee_3 + aafs_2 + ldev_aate_2 + mdhd_aate_2` (known_loads excluded). EV overlay = AATE Scenario 2 (`ldev_aate_2 + mdhd_aate_2`), broken out from Commercial/Residential.
+
+| Year | Statewide planning sales | EV overlay (broken out) | Status |
+|---|---:|---:|---|
+| 2025 | **251,713 GWh** | **0 GWh** | **Confirmed** — workbook sum 2026-07-23 |
+| 2045 | **409,561 GWh** | **32,996 GWh** | **Confirmed** — ~63% higher total than 2025 |
+
+Data centers **not separable** in this file. Locked in `managedSalesBySector2025Vs2045`; extract `data/processed/ced_managed_sales_sector_2025_2045.csv`.
+
+### CED 2025 Item 6 “Main Drivers” gross/net (Fleet pie)
+
+| Metric | Value | Horizon | Source | Status |
+|---|---|---|---|---|
+| Electric vehicles peak load growth | **+8,234 MW** | 2025→2045 | CEC Item 6, Resolution Adopting the California Energy Demand Forecast, 2025-2045, Business Meeting Jan 21, 2026, “Main Drivers of Peak Load Growth,” slide 10 (CAISO Planning baseline; September peak day, 6-7pm PDT) | **Forecast citation** — pie / callout |
+| Data centers peak load growth | **+4,721 MW** | 2025→2045 | Same slide / same scenario | **Forecast citation** — matched to EV on slide |
+| Gross increase total (five drivers) | **+25,241 MW** | 2025→2045 | Same slide: EV 8,234 · Consumption 6,011 · Data centers 4,721 · Fuel substitution 4,464 · Climate change 1,811 | **Forecast citation** — Fleet pie (gross only) |
+| Offsetting reductions | **−5,475 MW** | 2025→2045 | Same slide: energy efficiency −4,008 · BTM storage −777 · BTM solar −690 | **Forecast citation** — callout only (not pie slices) |
+| Net peak load growth | **+19,766 MW** | 2025→2045 | 25,241 − 5,475 | **Forecast citation** — matches slide net |
+
+### CED 2025 peak tables for a year-by-year DC vs EV axis (partial)
+
+Primary files live on the CEC demand-side / 2025 IEPR pages and in `data/raw/` (TN 268124 Peak Forecast; TN 268824 Form 11c). **Do not invent a 2045 MW slider** until year-by-year DC and transportation-electrification peak contributions are copied into a full series.
+
+| Asset | What it is | Where |
+|---|---|---|
+| CED 2025 Peak Forecast (TN 268124) | Adopted peak series / tables (2025–2045) | [2025 IEPR forecast files](https://www.energy.ca.gov/data-reports/reports/integrated-energy-policy-report-iepr/2025-integrated-energy-policy-report-0); notice lists TN 268124; local `data/raw/TN268124_CED_2025_Peak_Forecast.xlsx` |
+| CED 2025 Planning Form 11c Data Center Allocations (TN 268824) | Data-center peak allocations by LSE/BA | Same IEPR page; local `data/raw/TN268824_CED_2025_Planning_Forecast_Form_11c_Data_Center_Allocations.xlsx` |
+| CED 2025 Hourly Forecast - CAISO - Planning Scenario (TN 268127) | Hourly CAISO path (Planning) | Same IEPR page |
+| Utility Region Forecast - PEV Energy / PEV Stock | Transportation electrification energy and stock by region/scenario | Demand Side Modeling → Transportation Forecast |
+| Statewide Vehicle Populations | Stock by duty / AATE scenarios | Same Transportation section |
+| Jan 5, 2026 DAWG slides | Revised peak paths + DC / known-loads framing (includes CAISO annual peak table) | [Combined DAWG slides PDF](https://www.energy.ca.gov/sites/default/files/2026-01/2026-01-05_DAWG_Mtg_Slides-Combined_ada.pdf) |
+
+**Status:** Hub URLs and document IDs **Confirmed**. Fleet **four-bar** 2025 vs 2045 levels are in `PROVENANCE.ieprDemandForecast.matchedPeakLevels2025Vs2045`. Item 6 slide 10 growth / pie remain in `matchedPeakGrowth2025To2045`. Full year-by-year series for a slider: **not yet extracted**.
+
 ## Demand growth framing (CEC IEPR 2025 vs EIA national)
 
 Site intro and StatBubbles cite the **CEC's** adopted demand forecast, not a projection from this project's model. Do not upgrade C6/C7/C8 on the strength of this framing.

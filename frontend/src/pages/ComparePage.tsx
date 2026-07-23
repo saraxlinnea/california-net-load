@@ -41,7 +41,7 @@ export default function ComparePage() {
         </p>
         <p className="honesty">
           Each day is one CA ISO-TAC sample; differences are not a forecast. EV
-          overlay uses the same CEC shape assumptions as Cost and Adoption.
+          overlay uses the same CEC shape assumptions as Cost and Fleet.
         </p>
       </header>
 

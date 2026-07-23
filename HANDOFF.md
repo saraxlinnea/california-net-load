@@ -22,7 +22,7 @@ in place for a shippable viewer plus an honest PG&E-only cost calculator.
 2. `plot_duck_curve.py` / `ev_load_overlay.py` · static PNG pipeline
 3. `data/processed/tou_rates_pge.csv` · PG&E EV2-A and EV-B (re-verified 2026-07-20 PASS)
 4. `frontend/` · React + Plotly, multi-page nav:
-   - Primary nav: Adoption, Cost, Fuel, Compare, Methods (Storage unlinked)
+   - Primary nav: Adoption, Cost, Fuel, Compare (story, left); Methods (reference, right). Storage unlinked.
    - Site tagline in Layout header on every page
    - `/` Adoption · hero + chart-first net+EV + chips + split C5/C7 bridge +
      ACC II sales-vs-fleet note; speculative charts parked
@@ -50,14 +50,19 @@ in place for a shippable viewer plus an honest PG&E-only cost calculator.
 6. Adoption stress-test denominator frozen: CEC LDV on-road stock
    \(N_{\text{LDV}} = 29{,}657{,}259\) (data as of 2025-12-31; verified 2026-07-22).
    AFDC baseline \(N_0 = 1{,}981{,}000\). Math in `adoptionStress.ts`.
-   Claim labels C1–C9 in `CLAIMS.md`; Adoption metrics and EV-vs-BESS strip
-   show claim ids lightly in the UI.
+   When \(N > N_0\), chart EV is incremental (total − baseline); at \(N_0\),
+   counterfactual with double-count honesty. Claim labels C1–C9 in `CLAIMS.md`.
 7. Data centers: Confirmed CEC peak-share (~1,000 MW / ~2% of CAISO peak,
-   early 2026) and CEC ~2040 forecast (~4,500 MW / ~9%) in `BENCHMARKS.md` +
-   `provenance.ts`. Adoption shows a small peak-MW context chart (today /
-   2040 / EV stress bar). Generation pie / end-use slices stay blocked.
+   early 2026) and CEC ~2040 forecast (~4,500 MW / ~9%) remain in
+   `BENCHMARKS.md` + `provenance.ts` for other callouts. Fleet’s EV vs
+   data-center chart uses matched CED 2025 Peak Forecast *levels* (2025 vs
+   2045: EV 132 / 8,388 MW; DC 96 / 4,817 MW) via
+   `matchedPeakLevels2025Vs2045`, cross-checked to Item 6 slide 10 growth.
+   Item 6 gross/net drivers pie stays on `matchedPeakGrowth2025To2045`.
+   Generation pie / end-use slices stay blocked.
 8. CEC LDV raw workbook + county extract live in `data/raw/` (re-verified
-   2026-07-22; statewide sum 29,657,259).
+   2026-07-22; statewide sum 29,657,259). CED 2025 Peak Forecast (TN 268124)
+   and Form 11c (TN 268824) also in `data/raw/`.
 
 ## Suggested next steps
 

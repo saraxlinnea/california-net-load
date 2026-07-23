@@ -3,13 +3,44 @@ import type { EmissionFactor, FuelMixRow } from "./fuelTypes";
 import { FUEL_COLORS, FUEL_STACK_ORDER } from "./fuelTypes";
 import { PLOTLY_MUTED, basePlotlyLayout } from "./chartConfig";
 
+function emissionFactorMap(
+  factors: EmissionFactor[],
+): Map<string, EmissionFactor> {
+  return new Map(factors.map((f) => [f.fuel, f] as const));
+}
+
+/**
+ * Same operational-stack CO₂ accounting as the hourly CI line:
+ * include_in_ci fuels (floored at 0 MW), plus battery discharge at 0 EF.
+ */
+function stackLbsAndMwh(
+  row: FuelMixRow,
+  ef: Map<string, EmissionFactor>,
+): { lbs: number; mwh: number } {
+  let lbs = 0;
+  let mwh = 0;
+  for (const fuel of FUEL_STACK_ORDER) {
+    const meta = ef.get(fuel);
+    if (!meta || !meta.include_in_ci) continue;
+    const mw = Math.max(Number(row[fuel as keyof FuelMixRow] ?? 0), 0);
+    lbs += mw * meta.lb_co2_per_mwh;
+    mwh += mw;
+  }
+  // Battery discharge only (positive): 0 EF but dilutes CI slightly
+  const batt = Number(row.Batteries ?? 0);
+  const battMeta = ef.get("Batteries");
+  if (batt > 0 && battMeta) {
+    lbs += batt * battMeta.lb_co2_per_mwh;
+    mwh += batt;
+  }
+  return { lbs, mwh };
+}
+
 export function computeCarbonIntensity(
   rows: FuelMixRow[],
   factors: EmissionFactor[],
 ): { times: string[]; ci: number[]; gasMw: number[]; batteryMw: number[] } {
-  const ef = new Map(
-    factors.map((f) => [f.fuel, f] as const),
-  );
+  const ef = emissionFactorMap(factors);
   const times: string[] = [];
   const ci: number[] = [];
   const gasMw: number[] = [];
@@ -19,27 +50,104 @@ export function computeCarbonIntensity(
     times.push(row.Time);
     gasMw.push(Number(row["Natural Gas"] ?? 0));
     batteryMw.push(Number(row.Batteries ?? 0));
-
-    let lbs = 0;
-    let mwh = 0;
-    for (const fuel of FUEL_STACK_ORDER) {
-      const meta = ef.get(fuel);
-      if (!meta || !meta.include_in_ci) continue;
-      const mw = Math.max(Number(row[fuel as keyof FuelMixRow] ?? 0), 0);
-      lbs += mw * meta.lb_co2_per_mwh;
-      mwh += mw;
-    }
-    // Battery discharge only (positive): 0 EF but dilutes CI slightly
-    const batt = Number(row.Batteries ?? 0);
-    const battMeta = ef.get("Batteries");
-    if (batt > 0 && battMeta) {
-      lbs += batt * battMeta.lb_co2_per_mwh;
-      mwh += batt;
-    }
+    const { lbs, mwh } = stackLbsAndMwh(row, ef);
     ci.push(mwh > 0 ? lbs / mwh : 0);
   }
 
   return { times, ci, gasMw, batteryMw };
+}
+
+export type DailyStackCarbon = {
+  totalLbs: number;
+  totalMwh: number;
+  /** Generation-weighted average CI for the day (self-check vs hourly range). */
+  impliedAvgCi: number;
+  /** US short tons (2,000 lb). */
+  totalTons: number;
+};
+
+/** Sum operational-stack CO₂ over the day using the CI-line EF mapping. */
+export function computeDailyStackCarbon(
+  rows: FuelMixRow[],
+  factors: EmissionFactor[],
+): DailyStackCarbon {
+  const ef = emissionFactorMap(factors);
+  let totalLbs = 0;
+  let totalMwh = 0;
+  for (const row of rows) {
+    const { lbs, mwh } = stackLbsAndMwh(row, ef);
+    totalLbs += lbs;
+    totalMwh += mwh;
+  }
+  return {
+    totalLbs,
+    totalMwh,
+    impliedAvgCi: totalMwh > 0 ? totalLbs / totalMwh : 0,
+    totalTons: totalLbs / 2000,
+  };
+}
+
+export type WindowChargeCarbon = {
+  avgCiMidday: number;
+  avgCiEvening: number;
+  co2PerChargeMiddayLb: number;
+  co2PerChargeEveningLb: number;
+  /** Absolute % difference of evening vs midday per-charge CO₂; null if midday ≈ 0. */
+  pctDifference: number | null;
+  kwhPerCar: number;
+};
+
+/**
+ * Generation-weighted CI in midday (10–15) and evening (17–21), times one
+ * car's daily energy (Cost-page CA-average kWh).
+ */
+export function computeWindowChargeCarbon(
+  rows: FuelMixRow[],
+  factors: EmissionFactor[],
+  kwhPerCar: number,
+): WindowChargeCarbon | null {
+  const ef = emissionFactorMap(factors);
+  let midLbs = 0;
+  let midMwh = 0;
+  let eveLbs = 0;
+  let eveMwh = 0;
+
+  for (const row of rows) {
+    const h = hourFromFuelTime(row.Time);
+    const { lbs, mwh } = stackLbsAndMwh(row, ef);
+    if (MIDDAY_HOURS.has(h)) {
+      midLbs += lbs;
+      midMwh += mwh;
+    }
+    if (EVENING_HOURS.has(h)) {
+      eveLbs += lbs;
+      eveMwh += mwh;
+    }
+  }
+
+  if (midMwh <= 0 || eveMwh <= 0 || kwhPerCar <= 0) return null;
+
+  const avgCiMidday = midLbs / midMwh;
+  const avgCiEvening = eveLbs / eveMwh;
+  const mwhPerCar = kwhPerCar / 1000;
+  const co2PerChargeMiddayLb = mwhPerCar * avgCiMidday;
+  const co2PerChargeEveningLb = mwhPerCar * avgCiEvening;
+  const middayFloorLb = 1e-6;
+  const pctDifference =
+    co2PerChargeMiddayLb >= middayFloorLb
+      ? (Math.abs(co2PerChargeEveningLb - co2PerChargeMiddayLb) /
+          co2PerChargeMiddayLb) *
+        100
+      : null;
+
+  return {
+    avgCiMidday,
+    avgCiEvening,
+    co2PerChargeMiddayLb,
+    co2PerChargeEveningLb,
+    pctDifference,
+    kwhPerCar,
+  };
 }
 
 export function buildFuelMixTraces(

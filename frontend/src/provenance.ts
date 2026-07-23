@@ -21,6 +21,15 @@ export const PROVENANCE = {
       "2025-08-21",
       "2026-07-15",
     ],
+    /**
+     * Peak benchmarks primary (CAISO Peak Load History PDF).
+     * Hourly series: OASIS via gridstatus in pull_caiso_day.py; committed CSVs.
+     */
+    peakHistoryUrl:
+      "https://www.caiso.com/documents/californiaisopeakloadhistory.pdf",
+    processedGlob: "data/processed/grid_timeseries_YYYY-MM-DD.csv",
+    processingNote:
+      "Hourly load/fuel mix pulled via gridstatus.CAISO() (pull_caiso_day.py), then synced to frontend/public/data/.",
     /** CAISO Peak Load History PDF; site header StatBubble */
     peak2024Mw: 48_323,
     peak2024Label: "2024 (Sept 5, 16:59)",
@@ -28,6 +37,15 @@ export const PROVENANCE = {
   evShape: {
     source: "CEC 2022 IEPR PEV Load Shapes (LD, 5 utility regions)",
     year: 2024,
+    /**
+     * Official CEDU 2022 Load Shapes hub (Transportation Forecast).
+     * Exact workbook used here was uploaded locally (Data sheet); not in data/raw/.
+     */
+    hubUrl:
+      "https://www.energy.ca.gov/data-reports/california-energy-planning-library/forecasts-and-system-planning/demand-side-0",
+    processedPath: "data/processed/ev_load_shapes_cec_2024_all.csv",
+    processedSummerWeekday:
+      "data/processed/ev_load_shape_cec_2024_summer_weekday.csv",
   },
   population: {
     source: "AFDC vehicle-registration table",
@@ -108,6 +126,132 @@ export const PROVENANCE = {
     name: "CEC 2025 IEPR Demand Forecast (CED 2025)",
     adopted: "2026-01-21",
     url: "https://www.energy.ca.gov/data-reports/california-energy-planning-library/forecasts-and-system-planning/demand-side-3",
+    ieprForecastFilesUrl:
+      "https://www.energy.ca.gov/data-reports/reports/integrated-energy-policy-report-iepr/2025-integrated-energy-policy-report-0",
+    peakForecastTn: "268124",
+    peakForecastLabel: "CED 2025 Peak Forecast",
+    form11cDataCentersLabel: "CED 2025 Planning Form 11c Data Center Allocations",
+    caisoHourlyPlanningTn: "268127",
+    dawgUpdatedResultsUrl:
+      "https://www.energy.ca.gov/sites/default/files/2026-01/2026-01-05_DAWG_Mtg_Slides-Combined_ada.pdf",
+    transportationPevEnergyLabel: "Utility Region Forecast - PEV Energy",
+    transportationPevStockLabel: "Utility Region Forecast – PEV Stock",
+    matchedEvVsDcPeakSeriesPasted: false,
+    /**
+     * Statewide electricity sales by sector (GWh), Planning scenario suite.
+     * Source: i25 Managed Sales by Sector and Zone (Planning Library).
+     * planning_sales = baseline_sales_mid + aaee_3 + aafs_2 + ldev_aate_2 + mdhd_aate_2
+     * (known_loads_incr excluded). EV overlay = ldev_aate_2 + mdhd_aate_2,
+     * broken out so Commercial/Residential are net of AATE.
+     */
+    managedSalesBySector2025Vs2045: {
+      sourceFile:
+        "data/raw/i25_Managed_Sales_by_Sector_and_Zone_Planning_Library_ada.xlsx",
+      extractFile: "data/processed/ced_managed_sales_sector_2025_2045.csv",
+      units: "GWh",
+      scenarioNote:
+        "Planning Forecast adjustments: AAEE Scenario 3 (aaee_3), AAFS Scenario 2 (aafs_2), AATE Scenario 2 (ldev_aate_2 + mdhd_aate_2)",
+      formula:
+        "planning_sales = baseline_sales_mid + aaee_3 + aafs_2 + ldev_aate_2 + mdhd_aate_2",
+      dataCentersNote:
+        "Data centers are not separable in this file; their growth is embedded in Commercial/Industrial baseline figures.",
+      chartCite:
+        'CEC, "Managed Sales by Sector and Zone" (Planning Library i25), statewide sum of planning_sales by sector for 2025 and 2045; EV overlay = ldev_aate_2 + mdhd_aate_2 (AATE Scenario 2), broken out from Commercial/Residential. Planning adjustments: AAEE Scenario 3, AAFS Scenario 2, AATE Scenario 2.',
+      byYear: {
+        2025: {
+          totalGwh: 251_713.321667,
+          evOverlayGwh: 0,
+          categoriesGwh: {
+            Streetlighting: 1_309.51,
+            "Industrial Mining & Construction": 4_165.228991,
+            TCU: 15_108.012909,
+            AGWP: 20_186.129353,
+            "Industrial Manufacturing": 29_533.907217,
+            Residential: 84_359.016207,
+            Commercial: 97_051.516989,
+            "Electric vehicles": 0,
+          },
+        },
+        2045: {
+          totalGwh: 409_561.281295,
+          evOverlayGwh: 32_995.627896,
+          categoriesGwh: {
+            Streetlighting: 1_033.55,
+            "Industrial Mining & Construction": 3_714.42313,
+            TCU: 18_659.65023,
+            AGWP: 22_972.017827,
+            "Industrial Manufacturing": 29_802.03274,
+            Residential: 137_623.273144,
+            Commercial: 162_760.706328,
+            "Electric vehicles": 32_995.627896,
+          },
+        },
+      },
+    },
+    /**
+     * Matched EV vs data-center peak *levels* at coincident system peak
+     * (CED 2025 Peak Forecast, annual_peaks, CAISO Planning_Scenario).
+     * EV = LIGHT_EV + MEDIUM_HEAVY_EV + AATE_LDV + AATE_MDHD.
+     * Growth deltas (+8,256 EV / +4,721 DC) cross-check Item 6 slide 10
+     * (+8,234 / +4,721). Hour differs by year (each year's own peak hour).
+     */
+    matchedPeakLevels2025Vs2045: {
+      ev2025Mw: 132,
+      ev2045Mw: 8_388,
+      dataCenters2025Mw: 96,
+      dataCenters2045Mw: 4_817,
+      growthEvMw: 8_256,
+      growthDataCentersMw: 4_721,
+      scenario: "Planning_Scenario",
+      tac: "CAISO",
+      sheet: "annual_peaks",
+      sourceFile: "data/raw/TN268124_CED_2025_Peak_Forecast.xlsx",
+      form11cFile:
+        "data/raw/TN268824_CED_2025_Planning_Forecast_Form_11c_Data_Center_Allocations.xlsx",
+      extractFile: "data/processed/ced_2025_peak_ev_dc_caiso_planning.csv",
+      peakHour2025Note: "Sept 3, 5pm",
+      peakHour2045Note: "Sept 6, 6pm",
+      chartCite:
+        'CEC, CED 2025 Peak Forecast (annual_peaks, Planning_Scenario, CAISO, coincident system peak), cross-validated against CEC, "California Energy Demand Forecast, 2025-2045," Item 6 presentation, slide 10, adopted January 21, 2026.',
+    },
+    /**
+     * Matched EV vs data-center peak *growth* (same forecast, same years).
+     * CEC Item 6 adoption presentation, "Main Drivers of Peak Load Growth,"
+     * slide 10: CAISO Planning baseline, load growth 2025 to 2045, September
+     * peak day 6-7pm PDT. Used for the Fleet gross-drivers pie / callout.
+     * Not the Data Centers topic-page ~1,000 / ~4,500 MW levels
+     * (different framing / ~2040 end year).
+     */
+    matchedPeakGrowth2025To2045: {
+      evMw: 8_234,
+      dataCentersMw: 4_721,
+      windowLabel: "2025 to 2045 peak load growth",
+      scenario: "CAISO Planning baseline",
+      peakDayNote: "September peak day, 6-7pm PDT",
+      slideLabel: "Item 6 presentation, slide 10",
+      chartCite:
+        'CEC, "California Energy Demand Forecast, 2025-2045," adopted January 21, 2026, Item 6 presentation, slide 10.',
+      /**
+       * Full "Main Drivers of Peak Load Growth" slide 10 breakdown.
+       * Pie uses gross increases only (negatives cannot be pie slices).
+       * Gross 25,241 − reductions 5,475 = net 19,766 MW.
+       */
+      grossIncreasesMw: {
+        electricVehicles: 8_234,
+        consumption: 6_011,
+        dataCenters: 4_721,
+        fuelSubstitution: 4_464,
+        climateChange: 1_811,
+      },
+      grossIncreasesTotalMw: 25_241,
+      reductionsMw: {
+        energyEfficiency: 4_008,
+        btmStorage: 777,
+        btmSolar: 690,
+      },
+      reductionsTotalMw: 5_475,
+      netGrowthMw: 19_766,
+    },
     peakDriverFinding:
       "EV charging (transportation electrification), not AI data centers, is the largest projected driver of CAISO peak demand growth through 2045",
     highScenarioPeakRiseLabel: "Up to 61%",
@@ -118,6 +262,7 @@ export const PROVENANCE = {
     dawgUpdateLabel:
       "Updated Results for Data Centers, Known Loads, Annual Forecast, Peak Forecast, and Forecast Use Cases (January 5, 2026 DAWG Presentation)",
     retrievedAsOf: "2026-07-22",
+    peakTablesCataloguedAsOf: "2026-07-23",
     strengthLabel: "Moderate-Strong (forecast citation)",
   },
   /**
@@ -151,7 +296,9 @@ export const PROVENANCE = {
     salesShare2030: 0.68,
     salesShare2035: 1.0,
     note: "Requirements are shares of new light-duty vehicle sales, not on-road fleet share. Fleet turnover lags sales by years.",
+    /** CARB news release summarizing ACC II; not the regulation text. */
     url: "https://ww2.arb.ca.gov/news/california-moves-accelerate-100-new-zero-emission-vehicle-sales-2035",
+    urlKind: "news release (not regulation text)" as const,
     retrievedAsOf: "2026-07-22",
   },
 } as const;

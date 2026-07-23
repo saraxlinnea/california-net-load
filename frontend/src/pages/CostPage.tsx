@@ -132,12 +132,6 @@ export default function CostPage() {
           x: 0,
           xanchor: "left" as const,
         },
-        margin: {
-          t: 56,
-          r: toggles.showTouRates ? 64 : 24,
-          b: 52,
-          l: 60,
-        },
       },
     };
   }, [rows, state, toggles, touRows]);
@@ -193,23 +187,32 @@ export default function CostPage() {
         <p className="lede">
           Move the same daily kWh into midday or off-peak hours on PG&E EV2-A or
           EV-B. For fleet scale and evening ramp, use{" "}
-          <Link to={`/${qs}`}>Adoption</Link>.
+          <Link to={`/${qs}`}>Fleet</Link>.
         </p>
       </header>
 
-      {threeClocks && (
-        <aside
-          className="callout callout-honesty"
-          aria-label="Three clocks: ramp, EV timing, TOU"
-        >
-          <p className="callout-headline">{threeClocks.headline}</p>
-          <p>{threeClocks.detail}</p>
-          <p className="callout-claims">
-            C1 Strong (CAISO ramp) · CEC timing Moderate · TOU ≠ CAISO peaks ·{" "}
-            <Link to={`/methods${qs}`}>Methods</Link>
-          </p>
-        </aside>
-      )}
+      <OverviewControls
+        days={days}
+        state={state}
+        toggles={toggles}
+        onDate={setDate}
+        onScenario={setScenario}
+        onPlan={setPlan}
+        onMode={setMode}
+        onCars={setCars}
+        onToggle={(key, value) =>
+          setToggles((prev) => ({ ...prev, [key]: value }))
+        }
+      />
+
+      <OverviewChart
+        error={error}
+        loading={loading}
+        hasRows={Boolean(rows)}
+        chart={chart}
+        ramp={ramp}
+        dayTimingsDetail={threeClocks?.detail ?? null}
+      />
 
       {shiftBridge && (
         <aside
@@ -232,35 +235,13 @@ export default function CostPage() {
             </div>
           ) : null}
           <p className="callout-claims">
-            Full controls on <Link to={`/${qs}`}>Adoption</Link>
+            Full controls on <Link to={`/${qs}`}>Fleet</Link>
             {" · "}
-            C7 illustrative grid · C5 moderate cost ·{" "}
+            Modeled ramp change · driver energy bill (PG&E EV rate) ·{" "}
             <Link to={`/methods${qs}`}>Methods</Link>
           </p>
         </aside>
       )}
-
-      <OverviewControls
-        days={days}
-        state={state}
-        toggles={toggles}
-        onDate={setDate}
-        onScenario={setScenario}
-        onPlan={setPlan}
-        onMode={setMode}
-        onCars={setCars}
-        onToggle={(key, value) =>
-          setToggles((prev) => ({ ...prev, [key]: value }))
-        }
-      />
-
-      <OverviewChart
-        error={error}
-        loading={loading}
-        hasRows={Boolean(rows)}
-        chart={chart}
-        ramp={ramp}
-      />
 
       {costs && (
         <OverviewCost

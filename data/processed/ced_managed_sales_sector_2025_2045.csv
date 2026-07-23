@@ -1,0 +1,17 @@
+year,category,gwh,kind,notes
+2025,AGWP,20186.12935349477,sector_net_of_ev,planning_sales - (ldev_aate_2 + mdhd_aate_2); statewide sum over pa_name/zone
+2025,Commercial,97051.51698926759,sector_net_of_ev,planning_sales - (ldev_aate_2 + mdhd_aate_2); statewide sum over pa_name/zone
+2025,Industrial Manufacturing,29533.90721715543,sector_net_of_ev,planning_sales - (ldev_aate_2 + mdhd_aate_2); statewide sum over pa_name/zone
+2025,Industrial Mining & Construction,4165.228990917974,sector_net_of_ev,planning_sales - (ldev_aate_2 + mdhd_aate_2); statewide sum over pa_name/zone
+2025,Residential,84359.01620738984,sector_net_of_ev,planning_sales - (ldev_aate_2 + mdhd_aate_2); statewide sum over pa_name/zone
+2025,Streetlighting,1309.51,sector_net_of_ev,planning_sales - (ldev_aate_2 + mdhd_aate_2); statewide sum over pa_name/zone
+2025,TCU,15108.012909055435,sector_net_of_ev,planning_sales - (ldev_aate_2 + mdhd_aate_2); statewide sum over pa_name/zone
+2025,Electric vehicles,0.0,ev_overlay,sum of ldev_aate_2 + mdhd_aate_2 across sectors; broken out to avoid double-count
+2045,AGWP,22972.01782734294,sector_net_of_ev,planning_sales - (ldev_aate_2 + mdhd_aate_2); statewide sum over pa_name/zone
+2045,Commercial,162760.70632768038,sector_net_of_ev,planning_sales - (ldev_aate_2 + mdhd_aate_2); statewide sum over pa_name/zone
+2045,Industrial Manufacturing,29802.03273988151,sector_net_of_ev,planning_sales - (ldev_aate_2 + mdhd_aate_2); statewide sum over pa_name/zone
+2045,Industrial Mining & Construction,3714.423129900425,sector_net_of_ev,planning_sales - (ldev_aate_2 + mdhd_aate_2); statewide sum over pa_name/zone
+2045,Residential,137623.2731436023,sector_net_of_ev,planning_sales - (ldev_aate_2 + mdhd_aate_2); statewide sum over pa_name/zone
+2045,Streetlighting,1033.55,sector_net_of_ev,planning_sales - (ldev_aate_2 + mdhd_aate_2); statewide sum over pa_name/zone
+2045,TCU,18659.650230155665,sector_net_of_ev,planning_sales - (ldev_aate_2 + mdhd_aate_2); statewide sum over pa_name/zone
+2045,Electric vehicles,32995.62789607102,ev_overlay,sum of ldev_aate_2 + mdhd_aate_2 across sectors; broken out to avoid double-count

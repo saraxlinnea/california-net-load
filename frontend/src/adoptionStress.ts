@@ -3,16 +3,21 @@
  * Pure TS for the /adoption UI — no Plotly, no page chrome.
  *
  * Scales CEC EV load by fleet N / N_0, builds net-load-weighted optimized
- * shape, mixes (1-p)·CEC + p·optimized, and reports peak / energy / ramp metrics.
+ * shape (one-pass feedback on net + unmanaged EV), mixes (1-p)·CEC + p·optimized.
+ * When N > N0, chart series use signed incremental EV = total(N) − baseline(N0).
  */
 import type { EvRow, Scenario } from "./types";
 import { PROVENANCE } from "./provenance";
 import {
   cecEvLoads,
-  netLoadOptimizedEvLoads,
   peakEvMw as maxEvMw,
+  redistributeEnergyToLowestNet,
 } from "./managedCharging";
-import { computeEveningRamp, type EveningRamp } from "./insights";
+import {
+  computeEveningRampAtAnchors,
+  findEveningRampAnchors,
+  type EveningRamp,
+} from "./insights";
 
 /** AFDC 2024 BEV+PHEV baseline plug-in stock N_0 */
 export const N0 = PROVENANCE.population.bevPlusPhev;
@@ -136,6 +141,17 @@ export function scaleLoadsToFleet(loadsAtN0: number[], fleetN: number): number[]
   return loadsAtN0.map((v) => v * factor);
 }
 
+/**
+ * Signed growth: total(N) − baseline(N0). No floor — conserves
+ * ΣΔ = E(N) − E(N0). Negative hours mean below today's modeled mix that hour.
+ */
+export function incrementalLoads(
+  totalAtN: number[],
+  baselineAtN0: number[],
+): number[] {
+  return totalAtN.map((v, i) => v - (baselineAtN0[i] ?? 0));
+}
+
 export type AdoptionStressParams = {
   rows: EvRow[];
   scenario: Scenario;
@@ -161,39 +177,63 @@ export type AdoptionStressResult = {
   /** Alias of participation for UI share-state naming */
   participate: number;
   scenario: Scenario;
-  /** Hourly mixed EV load (MW) */
+  /**
+   * True when N > N0: chart/metrics use signed incremental EV = total(N) − baseline(N0)
+   * so growth is not double-counted on top of today's modeled fleet.
+   */
+  usesIncrementalOverlay: boolean;
+  /** Chart-scale mixed EV (signed incremental when usesIncrementalOverlay; else full mix) */
   evLoadsMw: number[];
-  /** Alias of evLoadsMw */
+  /** Alias of evLoadsMw (chart-scale) */
   evLoads: number[];
-  /** Hourly CEC (unmanaged) at this fleet */
+  /** FULL mixed EV at fleet N (never chart-incremental) */
+  evLoadsTotalMw: number[];
+  /** FULL mixed EV at N0 (baseline); subtract from total for incremental */
+  evLoadsBaselineMw: number[];
+  /** FULL CEC (unmanaged) at this fleet (never chart-incremental) */
   cecLoadsMw: number[];
-  /** Alias for ghost unmanaged series */
+  /** Chart-scale unmanaged ghost (signed incremental when flagged; else full CEC) */
   unmanagedEvLoads: number[];
-  /** Hourly net-load-weighted optimized at this fleet (same daily energy as CEC) */
+  /**
+   * FULL-fleet net-load-weighted optimized at N (not chart-incremental).
+   * Do not plot against chart-scale series without scaling.
+   */
   optimizedLoadsMw: number[];
-  /** @deprecated Alias of optimizedLoadsMw (pre-rename midday field) */
+  /**
+   * @deprecated Alias of optimizedLoadsMw — FULL fleet, not chart incremental;
+   * not Cost-page midday solar.
+   */
   middayLoadsMw: number[];
-  /** Alias of optimizedLoadsMw */
+  /**
+   * @deprecated Alias of optimizedLoadsMw — FULL fleet, not chart incremental;
+   * not Cost-page managedEvLoads().
+   */
   managedEvLoads: number[];
-  /** net_load + mixed EV */
+  /** net_load + chart-scale EV series */
   netPlusEv: number[];
+  /** Peak of chart-scale EV series (incremental when usesIncrementalOverlay) */
   peakEvMw: number;
-  /** Daily EV energy (MWh); conserved across p */
+  /** Peak of full mixed EV at fleet N */
+  peakEvTotalMw: number;
+  /** Daily EV energy of chart series (MWh) */
   evEnergyMwh: number;
+  /** Daily EV energy of full fleet-N mix (MWh) */
+  evEnergyTotalMwh: number;
   /** Daily CAISO system load energy (MWh) */
   caisoEnergyMwh: number;
-  /** EV daily energy as % of that day's CAISO load energy */
+  /** Chart EV daily energy as % of that day's CAISO load energy */
   pctOfCaisoEnergy: number;
-  /** Max of net_load + mixed EV */
+  /** Max of net_load + chart EV */
   peakNetPlusEv: number;
-  /** Evening ramp on net + mixed EV */
+  /** Evening ramp on net + chart EV (grid-only belly/peak hours) */
   ramp: EveningRamp | null;
-  /** Evening ramp on net + CEC only (p = 0), same fleet */
+  /** Evening ramp on net + unmanaged chart series (same grid-only hours) */
   rampAtP0: EveningRamp | null;
   rampUnmanaged: EveningRamp | null;
   /**
-   * Unmanaged ramp rate minus mixed ramp rate (MW/h).
-   * Positive means participation reduced the evening climb rate.
+   * Unmanaged ramp rate minus mixed ramp rate (MW/h), both measured on the
+   * grid-only evening belly→peak hours. Positive means participation reduced
+   * the climb rate on that fixed window.
    */
   rampReliefMwPerHour: number | null;
   /** Alias of rampReliefMwPerHour (0 when null) */
@@ -202,8 +242,9 @@ export type AdoptionStressResult = {
 
 /**
  * Compute adoption stress metrics for a day.
- * Scales CEC EV columns by N/N_0, rebuilds optimized via netLoadOptimizedEvLoads,
- * mixes with participation p, and measures energy / peak / evening ramp.
+ * Scales CEC EV columns by N/N_0, rebuilds optimized using net + unmanaged EV
+ * at fleet N (one-pass feedback), mixes with participation p.
+ * When N > N0, chart series are incremental vs the N0 baseline (choice A).
  */
 export function computeAdoptionStress(
   paramsOrRows: AdoptionStressParams | EvRow[],
@@ -220,20 +261,55 @@ export function computeAdoptionStress(
     params.participation ?? params.participate ?? 0,
   );
 
-  const cecLoadsMw = scaleLoadsToFleet(cecEvLoads(rows, scen), fleetN);
-  const optimizedLoadsMw = scaleLoadsToFleet(
-    netLoadOptimizedEvLoads(rows, scen),
-    fleetN,
+  const cecAtN0 = cecEvLoads(rows, scen);
+  const cecLoadsMw = scaleLoadsToFleet(cecAtN0, fleetN);
+  const energyAtN = sum(cecLoadsMw);
+  const energyAtN0 = sum(cecAtN0);
+
+  // One-pass: weight lowest-strain hours using net + unmanaged EV at fleet N.
+  const netWithUnmanaged = rows.map(
+    (r, i) => r.net_load_MW + (cecLoadsMw[i] ?? 0),
   );
-  const evLoadsMw = mixEvLoads(cecLoadsMw, optimizedLoadsMw, participation);
+  const optimizedLoadsMw = redistributeEnergyToLowestNet(
+    energyAtN,
+    netWithUnmanaged,
+  );
+  const optimizedAtN0 = redistributeEnergyToLowestNet(
+    energyAtN0,
+    rows.map((r, i) => r.net_load_MW + (cecAtN0[i] ?? 0)),
+  );
+
+  const evLoadsTotalMw = mixEvLoads(
+    cecLoadsMw,
+    optimizedLoadsMw,
+    participation,
+  );
+  const evLoadsBaselineMw = mixEvLoads(cecAtN0, optimizedAtN0, participation);
+
+  const usesIncrementalOverlay = fleetN > N0 + 1e-6;
+  const evLoadsMw = usesIncrementalOverlay
+    ? incrementalLoads(evLoadsTotalMw, evLoadsBaselineMw)
+    : evLoadsTotalMw;
+  const unmanagedChart = usesIncrementalOverlay
+    ? incrementalLoads(cecLoadsMw, cecAtN0)
+    : cecLoadsMw;
 
   const evEnergyMwh = sum(evLoadsMw);
+  const evEnergyTotalMwh = sum(evLoadsTotalMw);
   const caisoEnergyMwh = sum(rows.map((r) => r.load_MW));
   const netPlusMixed = rows.map((r, i) => r.net_load_MW + evLoadsMw[i]);
-  const netPlusCec = rows.map((r, i) => r.net_load_MW + cecLoadsMw[i]);
+  const netPlusUnmanaged = rows.map(
+    (r, i) => r.net_load_MW + unmanagedChart[i],
+  );
 
-  const ramp = computeEveningRamp(rowsWithNet(rows, netPlusMixed));
-  const rampAtP0 = computeEveningRamp(rowsWithNet(rows, netPlusCec));
+  // Lock belly/peak hours on grid-only net so relief does not mix windows.
+  const gridAnchors = findEveningRampAnchors(rows);
+  const ramp = gridAnchors
+    ? computeEveningRampAtAnchors(rows, netPlusMixed, gridAnchors)
+    : null;
+  const rampAtP0 = gridAnchors
+    ? computeEveningRampAtAnchors(rows, netPlusUnmanaged, gridAnchors)
+    : null;
 
   const rampReliefMwPerHour =
     ramp && rampAtP0 ? rampAtP0.mwPerHour - ramp.mwPerHour : null;
@@ -245,16 +321,21 @@ export function computeAdoptionStress(
     participation,
     participate: participation,
     scenario: scen,
+    usesIncrementalOverlay,
     evLoadsMw,
     evLoads: evLoadsMw,
+    evLoadsTotalMw,
+    evLoadsBaselineMw,
     cecLoadsMw,
-    unmanagedEvLoads: cecLoadsMw,
+    unmanagedEvLoads: unmanagedChart,
     optimizedLoadsMw,
     middayLoadsMw: optimizedLoadsMw,
     managedEvLoads: optimizedLoadsMw,
     netPlusEv: netPlusMixed,
     peakEvMw: maxEvMw(evLoadsMw),
+    peakEvTotalMw: maxEvMw(evLoadsTotalMw),
     evEnergyMwh,
+    evEnergyTotalMwh,
     caisoEnergyMwh,
     pctOfCaisoEnergy:
       caisoEnergyMwh > 0 ? (evEnergyMwh / caisoEnergyMwh) * 100 : 0,
@@ -265,11 +346,6 @@ export function computeAdoptionStress(
     rampReliefMwPerHour,
     rampRelief: rampReliefMwPerHour ?? 0,
   };
-}
-
-/** Synthetic rows so computeEveningRamp reads net+EV as net_load_MW. */
-function rowsWithNet(rows: EvRow[], netMw: number[]): EvRow[] {
-  return rows.map((r, i) => ({ ...r, net_load_MW: netMw[i] ?? r.net_load_MW }));
 }
 
 function sum(xs: number[]): number {

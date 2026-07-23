@@ -3,6 +3,18 @@ import type { EvRow } from "./types";
 import { PLOTLY_MUTED, basePlotlyLayout } from "./chartConfig";
 import { estimateStorageToFlatten } from "./storageSizing";
 
+function hourLabels(): string[] {
+  return [...Array(24).keys()].map((h) => {
+    const suffix = h >= 12 ? "p.m." : "a.m.";
+    const twelve = h % 12 === 0 ? 12 : h % 12;
+    return `${twelve} ${suffix}`;
+  });
+}
+
+function rowsByHour(rows: EvRow[]): Map<number, EvRow> {
+  return new Map(rows.map((r) => [r.hour, r]));
+}
+
 /** Align two days on hour-of-day for overlay comparison */
 export function buildCompareTraces(
   mild: EvRow[],
@@ -10,68 +22,67 @@ export function buildCompareTraces(
   mildLabel: string,
   peakLabel: string,
 ): Data[] {
-  const mildByHour = new Map(mild.map((r) => [r.hour, r]));
-  const peakByHour = new Map(peak.map((r) => [r.hour, r]));
-  const hours = [...Array(24).keys()];
-  const x = hours.map((h) => {
-    const suffix = h >= 12 ? "p.m." : "a.m.";
-    const twelve = h % 12 === 0 ? 12 : h % 12;
-    return `${twelve} ${suffix}`;
-  });
+  return [
+    ...buildCompareDayTraces(mild, mildLabel, "mild"),
+    ...buildCompareDayTraces(peak, peakLabel, "peak"),
+  ];
+}
 
-  const mildNet = hours.map((h) => mildByHour.get(h)?.net_load_MW ?? null);
-  const peakNet = hours.map((h) => peakByHour.get(h)?.net_load_MW ?? null);
-  const mildLoad = hours.map((h) => mildByHour.get(h)?.load_MW ?? null);
-  const peakLoad = hours.map((h) => peakByHour.get(h)?.load_MW ?? null);
+/** One day's total + net load traces (for drag-to-compare layers). */
+export function buildCompareDayTraces(
+  rows: EvRow[],
+  label: string,
+  tone: "mild" | "peak",
+): Data[] {
+  const byHour = rowsByHour(rows);
+  const hours = [...Array(24).keys()];
+  const x = hourLabels();
+  const load = hours.map((h) => byHour.get(h)?.load_MW ?? null);
+  const net = hours.map((h) => byHour.get(h)?.net_load_MW ?? null);
+  const loadColor =
+    tone === "mild" ? "rgba(28,28,28,0.35)" : "rgba(28,28,28,0.7)";
+  const netColor = tone === "mild" ? "#c0392b" : "#6d1a14";
 
   return [
     {
       x,
-      y: mildLoad,
-      name: `Total load · ${mildLabel}`,
+      y: load,
+      name: `Total load · ${label}`,
       type: "scatter",
       mode: "lines",
-      line: { color: "rgba(28,28,28,0.35)", width: 1.5, dash: "dot" },
-      hovertemplate: "%{y:,.0f} MW<extra>Mild load</extra>",
+      line: { color: loadColor, width: 1.5, dash: "dot" },
+      hovertemplate: `%{y:,.0f} MW<extra>${label} load</extra>`,
     },
     {
       x,
-      y: peakLoad,
-      name: `Total load · ${peakLabel}`,
+      y: net,
+      name: `Net load · ${label}`,
       type: "scatter",
       mode: "lines",
-      line: { color: "rgba(28,28,28,0.7)", width: 1.5, dash: "dot" },
-      hovertemplate: "%{y:,.0f} MW<extra>Peak load</extra>",
-    },
-    {
-      x,
-      y: mildNet,
-      name: `Net load · ${mildLabel}`,
-      type: "scatter",
-      mode: "lines",
-      line: { color: "#c0392b", width: 2.5 },
-      hovertemplate: "%{y:,.0f} MW<extra>Mild net</extra>",
-    },
-    {
-      x,
-      y: peakNet,
-      name: `Net load · ${peakLabel}`,
-      type: "scatter",
-      mode: "lines",
-      line: { color: "#6d1a14", width: 2.5 },
-      hovertemplate: "%{y:,.0f} MW<extra>Peak net</extra>",
+      line: { color: netColor, width: 2.5 },
+      hovertemplate: `%{y:,.0f} MW<extra>${label} net</extra>`,
     },
   ];
 }
 
-export function buildCompareLayout(): Partial<Layout> {
+/** Shared y-range so drag layers stay aligned. */
+export function compareYRange(mild: EvRow[], peak: EvRow[]): [number, number] {
+  const vals = [...mild, ...peak].flatMap((r) => [r.load_MW, r.net_load_MW]);
+  const max = Math.max(...vals, 0);
+  return [0, max * 1.05];
+}
+
+export function buildCompareLayout(
+  yRange?: [number, number],
+  titleText = "Two CAISO days: total load and net load",
+): Partial<Layout> {
   const base = basePlotlyLayout({
     margin: { t: 56, r: 24, b: 48, l: 60 },
   });
   return {
     ...base,
     title: {
-      text: "Two CAISO days: total load and net load",
+      text: titleText,
       font: { size: 14 },
       x: 0,
       xanchor: "left",
@@ -87,6 +98,7 @@ export function buildCompareLayout(): Partial<Layout> {
       ...base.yaxis,
       title: { text: "MW", font: { size: 11, color: PLOTLY_MUTED } },
       rangemode: "tozero",
+      ...(yRange ? { range: yRange } : {}),
     },
   };
 }

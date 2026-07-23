@@ -7,7 +7,7 @@ export type ChargingMode = "cec" | "managed" | "offpeak";
 export const MANAGED_WINDOW_HOURS = [10, 11, 12, 13, 14, 15] as const;
 
 export const CHARGING_MODE_LABELS: Record<ChargingMode, string> = {
-  cec: "Unmanaged (CEC)",
+  cec: "Unmanaged charging (CEC)",
   managed: "Midday solar",
   offpeak: "Off-peak rates only",
 };
@@ -35,29 +35,49 @@ export function managedEvLoads(rows: EvRow[], scenario: Scenario): number[] {
   const cec = cecEvLoads(rows, scenario);
   const total = cec.reduce((s, v) => s + v, 0);
   const inWindow = new Set<number>(MANAGED_WINDOW_HOURS);
-  const weights = rows.map((r) =>
-    inWindow.has(r.hour) ? Math.max(r.solar_MW, 0) || 1 : 0,
+  const solarWeights = rows.map((r) =>
+    inWindow.has(r.hour) ? Math.max(r.solar_MW, 0) : 0,
   );
+  const solarSum = solarWeights.reduce((s, v) => s + v, 0);
+  // If the midday window has no solar, equal-split across those six hours only.
+  const weights =
+    solarSum > 0
+      ? solarWeights
+      : rows.map((r) => (inWindow.has(r.hour) ? 1 : 0));
   return redistribute(total, weights);
 }
 
 /**
- * Same daily energy E, redistributed toward this day's lowest CAISO net load.
- * weight_h = max(net_max - net_h, 0) + epsilon. Used by Adoption stress mix.
+ * Same daily energy E, redistributed toward lowest hours of a net series.
+ * Default net series = this day's CAISO net + unmanaged CEC at the CSV/scenario
+ * fleet (one-pass feedback). Pass `netMw` to override. Illustrative C7.
  */
 export function netLoadOptimizedEvLoads(
   rows: EvRow[],
   scenario: Scenario,
   epsilon = 1e-6,
+  netMw?: number[],
 ): number[] {
   const cec = cecEvLoads(rows, scenario);
   const total = cec.reduce((s, v) => s + v, 0);
   if (!rows.length || total <= 0) return cec.map(() => 0);
-  const netMax = Math.max(...rows.map((r) => r.net_load_MW));
-  const weights = rows.map(
-    (r) => Math.max(netMax - r.net_load_MW, 0) + epsilon,
-  );
-  return redistribute(total, weights);
+  const netSeries =
+    netMw && netMw.length === rows.length
+      ? netMw
+      : rows.map((r, i) => r.net_load_MW + (cec[i] ?? 0));
+  return redistributeEnergyToLowestNet(total, netSeries, epsilon);
+}
+
+/** Redistribute fixed daily energy E toward lowest hours of a net series. */
+export function redistributeEnergyToLowestNet(
+  totalMwh: number,
+  netMw: number[],
+  epsilon = 1e-6,
+): number[] {
+  if (!netMw.length || totalMwh <= 0) return netMw.map(() => 0);
+  const netMax = Math.max(...netMw);
+  const weights = netMw.map((n) => Math.max(netMax - n, 0) + epsilon);
+  return redistribute(totalMwh, weights);
 }
 
 /**

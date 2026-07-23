@@ -118,15 +118,25 @@ function shapeWeightedRate(
   season: "Summer" | "Winter",
   touRows: TouRow[],
 ): number {
-  const total = evLoads.reduce((s, v) => s + v, 0);
-  if (total <= 0) return 0;
-  let effective = 0;
+  let ratedEnergy = 0;
+  let weighted = 0;
   for (let i = 0; i < rows.length; i++) {
     const rate = rateForHour(rows[i].hour, plan, season, touRows);
     if (rate == null) continue;
-    effective += (evLoads[i] / total) * rate;
+    const e = evLoads[i] ?? 0;
+    if (e <= 0) continue;
+    ratedEnergy += e;
+    weighted += e * rate;
   }
-  return effective;
+  if (ratedEnergy > 0) return weighted / ratedEnergy;
+  // No overlapping energy with valid rates: equal-weight mean of available rates.
+  const rates: number[] = [];
+  for (let i = 0; i < rows.length; i++) {
+    const rate = rateForHour(rows[i].hour, plan, season, touRows);
+    if (rate != null) rates.push(rate);
+  }
+  if (!rates.length) return 0;
+  return rates.reduce((s, r) => s + r, 0) / rates.length;
 }
 
 function buildShapeCost(
@@ -231,7 +241,22 @@ export type EveningRamp = {
   mwPerHour: number;
 };
 
-export function computeEveningRamp(rows: EvRow[]): EveningRamp | null {
+/** Belly/peak hours for the evening-ramp chord (from one net series). */
+export type EveningRampAnchors = {
+  bellyHour: number;
+  peakHour: number;
+  bellyTime: string;
+  peakTime: string;
+  hours: number;
+};
+
+/**
+ * Daytime belly = min net in hours 09–16; evening peak = max net at or after
+ * that belly hour. Used so ramp relief can lock hours from grid-only net.
+ */
+export function findEveningRampAnchors(
+  rows: EvRow[],
+): EveningRampAnchors | null {
   if (rows.length < 2) return null;
   const bellyPool = rows.filter((r) => r.hour >= 9 && r.hour <= 16);
   if (!bellyPool.length) return null;
@@ -245,35 +270,76 @@ export function computeEveningRamp(rows: EvRow[]): EveningRamp | null {
   );
   const hours = peak.hour - belly.hour;
   if (hours <= 0) return null;
-  const midHour = belly.hour + hours / 2;
-  const midRow =
-    after.find((r) => r.hour === Math.floor(midHour)) ??
-    after[Math.floor(after.length / 2)] ??
-    peak;
-  const deltaMw = peak.net_load_MW - belly.net_load_MW;
   return {
-    startTime: belly.Time,
-    endTime: peak.Time,
-    midTime: midRow.Time,
-    startLabel: hourLabel(belly.hour),
-    endLabel: hourLabel(peak.hour),
-    startMw: belly.net_load_MW,
-    endMw: peak.net_load_MW,
-    midMw: (belly.net_load_MW + peak.net_load_MW) / 2,
+    bellyHour: belly.hour,
+    peakHour: peak.hour,
+    bellyTime: belly.Time,
+    peakTime: peak.Time,
     hours,
-    deltaMw,
-    mwPerHour: deltaMw / hours,
   };
 }
 
+function mwAtHour(rows: EvRow[], netMw: number[], hour: number): number | null {
+  const i = rows.findIndex((r) => r.hour === hour);
+  if (i < 0) return null;
+  const v = netMw[i];
+  return Number.isFinite(v) ? v : null;
+}
+
 /**
- * Share-ready framing: evening CAISO ramp vs unmanaged CEC late-night EV peak
- * vs PG&E TOU ≠ CAISO peaks. Reuses ramp + CEC timing; no new metrics.
+ * Average climb on a net series between fixed belly/peak hours (same window
+ * for unmanaged vs mix when anchors come from grid-only net).
+ */
+export function computeEveningRampAtAnchors(
+  rows: EvRow[],
+  netMw: number[],
+  anchors: EveningRampAnchors,
+): EveningRamp | null {
+  if (rows.length < 2 || netMw.length !== rows.length) return null;
+  const startMw = mwAtHour(rows, netMw, anchors.bellyHour);
+  const endMw = mwAtHour(rows, netMw, anchors.peakHour);
+  if (startMw == null || endMw == null || anchors.hours <= 0) return null;
+  const midHour = anchors.bellyHour + anchors.hours / 2;
+  const midRow =
+    rows.find((r) => r.hour === Math.floor(midHour)) ??
+    rows.find((r) => r.hour === anchors.peakHour) ??
+    rows[0];
+  const deltaMw = endMw - startMw;
+  return {
+    startTime: anchors.bellyTime,
+    endTime: anchors.peakTime,
+    midTime: midRow.Time,
+    startLabel: hourLabel(anchors.bellyHour),
+    endLabel: hourLabel(anchors.peakHour),
+    startMw,
+    endMw,
+    midMw: (startMw + endMw) / 2,
+    hours: anchors.hours,
+    deltaMw,
+    mwPerHour: deltaMw / anchors.hours,
+  };
+}
+
+/** Evening ramp on this series' own belly/peak (chart annotations). */
+export function computeEveningRamp(rows: EvRow[]): EveningRamp | null {
+  const anchors = findEveningRampAnchors(rows);
+  if (!anchors) return null;
+  return computeEveningRampAtAnchors(
+    rows,
+    rows.map((r) => r.net_load_MW),
+    anchors,
+  );
+}
+
+/**
+ * Day-level timing detail for the Cost chart: evening CAISO ramp vs unmanaged
+ * CEC late-night EV peak vs PG&E TOU ≠ CAISO peaks. No headline; caption lives
+ * on OverviewChart. Reuses ramp + CEC timing; no new metrics.
  */
 export function buildThreeClocksCallout(
   rows: EvRow[],
   scenario: Scenario,
-): { headline: string; detail: string } | null {
+): { detail: string } | null {
   if (!rows.length) return null;
   const ramp = computeEveningRamp(rows);
   const cecTiming = buildEvTimingInsight(
@@ -287,8 +353,6 @@ export function buildThreeClocksCallout(
   if (!ramp || !cecTiming) return null;
   const label = SCENARIO_META[scenario].label.toLowerCase();
   return {
-    headline:
-      "Three different clocks: CAISO evening ramp, late-night CEC EV charging, and PG&E TOU prices.",
     detail: `This day’s net-load evening ramp averages ${Math.round(ramp.mwPerHour).toLocaleString()} MW/h from ${ramp.startLabel} to ${ramp.endLabel} (CAISO, Strong). Unmanaged CEC EV peak (${label}) is about ${Math.round(cecTiming.evPeakMw).toLocaleString()} MW around ${cecTiming.evPeakLabel}, after the net-load peak: late-night TOU behavior, not 6 p.m. arrival. PG&E EV TOU windows are territory retail rates; they are not CAISO system peak hours.`,
   };
 }
@@ -315,7 +379,7 @@ export type ShiftBridgeCallout = {
   gridLabel: string;
   gridValue: string;
   gridDetail: string;
-  /** C5 PG&E energy cost label + value */
+  /** C5 driver energy bill label + value */
   costLabel: string;
   costValue: string;
   costDetail: string;
@@ -348,8 +412,8 @@ export function buildShiftBridgeCallout(
   const mixFraming = framing === "mixVsCec";
 
   const prompt = mixFraming
-    ? "Raise % shifted to lowest-strain hours (or use a preset) to see illustrative evening ramp relief next to PG&E mix-vs-CEC energy $/car·year."
-    : "Raise % of charging shifted to midday (or use a preset) to see illustrative evening ramp relief next to PG&E midday-vs-CEC energy $/car·year.";
+    ? "Move the share shifted to lowest-strain hours to see evening ramp change next to the illustrative driver energy bill ($/car·year) for the active mix versus unmanaged charging (CEC)."
+    : "Raise the share of charging shifted to midday to see evening ramp change next to the illustrative driver energy bill ($/car·year) for midday versus unmanaged charging (CEC).";
 
   const intro = showSplit
     ? mixFraming
@@ -357,33 +421,29 @@ export function buildShiftBridgeCallout(
       : `At ${pct}% of daily charging shifted to midday, same kWh, different hours:`
     : prompt;
 
-  const gridLabel = mixFraming
-    ? "Illustrative grid relief"
-    : "Illustrative grid relief (C7)";
+  const gridLabel = "Modeled ramp change";
   const gridValue = hasRelief
     ? `${relief.toLocaleString()} MW/h`
     : "About 0 MW/h";
   const gridDetail = hasRelief
     ? mixFraming
-      ? "Evening ramp rate vs unmanaged CEC at this fleet (illustrative mix, not a real utility program)."
-      : "Evening ramp rate vs unmanaged CEC at this fleet (illustrative midday mix, not a real DR program)."
-    : "Little evening ramp relief at this fleet and day in this model.";
+      ? "Evening ramp rate versus unmanaged charging (CEC) at this fleet size (not a real utility program)."
+      : "Evening ramp rate versus unmanaged charging (CEC) at this fleet size (not a real DR program)."
+    : "Little evening ramp change at this fleet and day in this model.";
 
-  const costLabel = mixFraming
-    ? "PG&E energy cost"
-    : "PG&E energy cost (C5)";
+  const costLabel = "Driver energy bill (PG&E EV rate)";
   const costValue = hasSavings
     ? `~${dollars}/car·year`
     : mixFraming
-      ? "No mix edge"
-      : "No midday edge";
+      ? "No cheaper $/car on this mix"
+      : "No cheaper midday $/car";
   const costDetail = hasSavings
     ? mixFraming
-      ? `Active mix vs unmanaged CEC on ${plan}; energy charges only, PG&E territory only.`
-      : `Midday vs unmanaged CEC on ${plan}; energy charges only, PG&E territory only.`
+      ? `Active mix versus unmanaged charging (CEC) on ${plan}; energy ¢/kWh only for one car, not a full bill and not PG&E system cost.`
+      : `Midday versus unmanaged charging (CEC) on ${plan}; energy ¢/kWh only for one car, not a full bill and not PG&E system cost.`
     : mixFraming
-      ? `On ${plan} for this season day, the active mix does not beat unmanaged CEC on $/car·year (energy charges only).`
-      : `On ${plan} for this season day, midday does not beat unmanaged CEC on $/car·year (energy charges only).`;
+      ? `On ${plan} for this season day, the active mix does not beat unmanaged charging (CEC) on $/car·year (energy charges only).`
+      : `On ${plan} for this season day, midday does not beat unmanaged charging (CEC) on $/car·year (energy charges only).`;
 
   const echo = showSplit
     ? `${gridLabel}: ${gridValue}. ${costLabel}: ${costValue}.`

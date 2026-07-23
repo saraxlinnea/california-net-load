@@ -1,24 +1,17 @@
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import AdoptionPanel from "../AdoptionPanel";
+import { loadAvailableDays, loadEvTimeseries } from "../loadData";
 import {
-  loadAvailableDays,
-  loadEvTimeseries,
-  loadTouRates,
-} from "../loadData";
-import {
-  halfLdvShiftSharePatch,
   shareSearchString,
-  showShiftSharePatch,
   useShareState,
 } from "../shareState";
-import type { DayOption, EvRow, TouRow } from "../types";
+import type { DayOption, EvRow } from "../types";
 import "../App.css";
 
 export default function AdoptionPage() {
   const [days, setDays] = useState<DayOption[]>([]);
   const [rows, setRows] = useState<EvRow[] | null>(null);
-  const [touRows, setTouRows] = useState<TouRow[]>([]);
   const [loadingDays, setLoadingDays] = useState(true);
   const [loadingRows, setLoadingRows] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -31,17 +24,13 @@ export default function AdoptionPage() {
     setAdoption,
     setScale,
     setParticipate,
-    setTodayFleet,
-    setParams,
   } = useShareState(days);
 
   useEffect(() => {
     let cancelled = false;
-    Promise.all([loadAvailableDays(), loadTouRates()])
-      .then(([availableDays, tou]) => {
-        if (cancelled) return;
-        setDays(availableDays);
-        setTouRows(tou);
+    loadAvailableDays()
+      .then((availableDays) => {
+        if (!cancelled) setDays(availableDays);
       })
       .catch((caught) => {
         if (!cancelled) {
@@ -104,7 +93,6 @@ export default function AdoptionPage() {
       {!loadingRows && !error && rows && (
         <AdoptionPanel
           rows={rows}
-          touRows={touRows}
           days={days}
           date={state.date}
           state={state}
@@ -113,9 +101,6 @@ export default function AdoptionPage() {
           onAdoption={setAdoption}
           onScale={setScale}
           onParticipate={setParticipate}
-          onTodayFleet={setTodayFleet}
-          onShowShift={() => setParams(showShiftSharePatch(days))}
-          onHalfLdvShift={() => setParams(halfLdvShiftSharePatch(days))}
           pageGuide={pageGuide}
         />
       )}

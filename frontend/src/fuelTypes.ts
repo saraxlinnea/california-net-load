@@ -59,6 +59,7 @@ export const FUEL_COLORS: Record<string, string> = {
 
 export const CI_CAVEATS = [
   "Operational stack CO₂ only, not lifecycle (manufacturing, methane leakage, etc.).",
+  "Daily totals use US short tons (2000 lb), not SI tonnes.",
   "Imports use EPA eGRID2023 CAMX annual average (428.5 lb/MWh) as a proxy for unknown import mix.",
   "Batteries: discharge counted at 0 EF; charging excluded from the generation mix (energy shifting, not fuel).",
   "Biomass/biogas biogenic CO₂ excluded here; protocols differ.",

@@ -42,8 +42,8 @@ export default function OverviewCost({
         {vehicleCount === 1
           ? "1 car"
           : `${vehicleCount.toLocaleString()} cars`}
-        . Same energy every schedule; only the hours change. Evening-ramp relief
-        under higher adoption lives on Adoption.
+        . Same energy every schedule; only the hours change. Fleet scale and
+        evening ramp are on Fleet.
       </p>
       <p className="chart-showing">
         Chart showing: <strong>{CHARGING_MODE_LABELS[chargingMode]}</strong>
@@ -58,8 +58,8 @@ export default function OverviewCost({
             {hasSavings ? (
               <>
                 On <strong>{headline.plan}</strong>, switching from unmanaged
-                CEC to {headlineBest.label} saves about{" "}
-                <strong>
+                charging (CEC) to {headlineBest.label} saves about{" "}
+                <strong className="cost-savings-figure">
                   {formatDollars(headline.savingsYearlyPerCar)}
                 </strong>
                 /car·year (
@@ -72,8 +72,9 @@ export default function OverviewCost({
                     {vehicleCount.toLocaleString()} cars
                   </>
                 )}
-                . PG&E energy charges only; TOU windows are territory rates, not
-                CAISO peaks.
+                . Illustrative driver energy bill on a PG&E EV rate (energy
+                ¢/kWh only); TOU windows are territory rates, not CAISO peaks.
+                Not a full utility bill.
               </>
             ) : (
               <>
@@ -110,22 +111,25 @@ export default function OverviewCost({
               <div className="cost-shapes">
                 <ShapeCostBlock
                   shape={planCost.cec}
+                  mode="cec"
                   active={chargingMode === "cec"}
                 />
                 <ShapeCostBlock
                   shape={planCost.midday}
+                  mode="managed"
                   active={chargingMode === "managed"}
                 />
                 <ShapeCostBlock
                   shape={planCost.offpeak}
+                  mode="offpeak"
                   active={chargingMode === "offpeak"}
                 />
               </div>
-              <p className="cost-delta">
+              <p className={saves ? "cost-delta cost-delta-savings" : "cost-delta"}>
                 {saves ? (
                   <>
                     Best alternative ({best.label}) saves about{" "}
-                    <strong>
+                    <strong className="cost-savings-figure">
                       {formatDollars(planCost.savingsYearlyPerCar)}
                     </strong>
                     /car·year (
@@ -158,6 +162,7 @@ export default function OverviewCost({
 
 function ShapeCostBlock({
   shape,
+  mode,
   active,
 }: {
   shape: {
@@ -167,10 +172,23 @@ function ShapeCostBlock({
     dailyCentsPerVehicle: number;
     effectiveCentsPerKwh: number;
   };
+  mode: ChargingMode;
   active: boolean;
 }) {
+  const accentClass =
+    mode === "cec"
+      ? "shape-cost--ev"
+      : mode === "managed"
+        ? "shape-cost--midday"
+        : "shape-cost--tou";
   return (
-    <div className={active ? "shape-cost active-cost" : "shape-cost"}>
+    <div
+      className={
+        active
+          ? `shape-cost active-cost ${accentClass}`
+          : `shape-cost ${accentClass}`
+      }
+    >
       <p className="cost-sublabel">{shape.label}</p>
       <p className="cost-big">
         {formatDollars(shape.yearlyDollarsPerVehicle)}

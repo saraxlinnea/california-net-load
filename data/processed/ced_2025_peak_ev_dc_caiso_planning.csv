@@ -1,0 +1,3 @@
+tac,scenario,year,month,day,hour_ending,ev_mw,data_center_mw,ev_definition,source_file,sheet,notes
+CAISO,Planning_Scenario,2025,9,3,17,132,96,"LIGHT_EV + MEDIUM_HEAVY_EV + AATE_LDV + AATE_MDHD",TN268124_CED_2025_Peak_Forecast.xlsx,annual_peaks,"Coincident system peak; hour 17 = 5pm PDT"
+CAISO,Planning_Scenario,2045,9,6,18,8388,4817,"LIGHT_EV + MEDIUM_HEAVY_EV + AATE_LDV + AATE_MDHD",TN268124_CED_2025_Peak_Forecast.xlsx,annual_peaks,"Coincident system peak; hour 18 = 6pm PDT; growth vs 2025: EV +8256 MW, DC +4721 MW (cross-check Item 6 slide 10 +8234 / +4721)"

@@ -4,6 +4,7 @@
  *
  * Validates mid + N_0 daily EV energy against processed CSV (~16,581 MWh at 27.9 mi/day)
  * and a few fleet / mix identities that mirror adoptionStress.ts.
+ * Also checks fixed-window ramp relief (grid-only belly/peak hours).
  */
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -60,6 +61,49 @@ function fleetFromScale(s) {
   return s * N0;
 }
 
+function hourFromTime(t) {
+  const m = String(t).match(/[ T](\d{2}):/);
+  return m ? Number(m[1]) : -1;
+}
+
+/** Mirror findEveningRampAnchors: belly 9–16, peak at/after belly. */
+function findAnchors(net, hours) {
+  let bellyI = -1;
+  let bellyV = Infinity;
+  for (let i = 0; i < hours.length; i++) {
+    if (hours[i] >= 9 && hours[i] <= 16 && net[i] < bellyV) {
+      bellyV = net[i];
+      bellyI = i;
+    }
+  }
+  if (bellyI < 0) return null;
+  let peakI = bellyI;
+  let peakV = net[bellyI];
+  for (let i = 0; i < hours.length; i++) {
+    if (hours[i] >= hours[bellyI] && net[i] > peakV) {
+      peakV = net[i];
+      peakI = i;
+    }
+  }
+  const dh = hours[peakI] - hours[bellyI];
+  if (dh <= 0) return null;
+  return { bellyH: hours[bellyI], peakH: hours[peakI], hours: dh };
+}
+
+function rateAtAnchors(net, hours, anchors) {
+  const bi = hours.indexOf(anchors.bellyH);
+  const pi = hours.indexOf(anchors.peakH);
+  if (bi < 0 || pi < 0) return null;
+  return (net[pi] - net[bi]) / anchors.hours;
+}
+
+function redistributeToLowestNet(total, netSeries) {
+  const netMax = Math.max(...netSeries);
+  const weights = netSeries.map((n) => Math.max(netMax - n, 0) + 1e-6);
+  const wSum = sum(weights);
+  return weights.map((w) => (total * w) / wSum);
+}
+
 // --- constants / formula ---
 assert(
   Math.abs(EXPECTED_MID_MWH - 16_580.97) < 0.01,
@@ -85,19 +129,16 @@ assert(
   `CSV mid EV daily energy ${midMwh.toFixed(1)} MWh ≈ formula ${EXPECTED_MID_MWH}`,
 );
 
-// Scale identity: 2× fleet → 2× energy
 const scaled = midMwh * (fleetFromScale(2) / N0);
 assert(
   Math.abs(scaled - 2 * midMwh) < 1e-9,
   "scale s=2 doubles mid EV daily energy",
 );
 
-// Mix conserves daily energy
 const cec = rows.map((r) => r.ev_load_MW_mid);
-const optimized = [...cec].reverse(); // same sum, different shape
-const mixed = mixEvLoads(cec, optimized, 0.4);
+const optimized = [...cec].reverse();
 assert(
-  Math.abs(sum(mixed) - sum(cec)) < 1e-6,
+  Math.abs(sum(mixEvLoads(cec, optimized, 0.4)) - sum(cec)) < 1e-6,
   "mix p=0.4 conserves daily EV energy",
 );
 assert(
@@ -107,6 +148,79 @@ assert(
 assert(
   Math.abs(sum(mixEvLoads(cec, optimized, 1)) - sum(optimized)) < 1e-9,
   "mix p=1 equals optimized energy",
+);
+
+// --- Fixed-window ramp relief (grid-only anchors) ---
+const hours = rows.map((r) =>
+  typeof r.hour === "number" ? r.hour : hourFromTime(r.Time),
+);
+const gridNet = rows.map((r) => r.net_load_MW);
+const anchors = findAnchors(gridNet, hours);
+assert(anchors != null, "grid-only evening ramp anchors exist");
+
+const factor = N_LDV / N0;
+const cecFull = cec.map((v) => v * factor);
+const optFull = redistributeToLowestNet(
+  sum(cecFull),
+  gridNet.map((n, i) => n + cecFull[i]),
+);
+const mixFull = mixEvLoads(cecFull, optFull, 0.5);
+
+const unmanagedN0 = gridNet.map((n, i) => n + cec[i]);
+const rateU0 = rateAtAnchors(unmanagedN0, hours, anchors);
+assert(
+  rateU0 != null && Math.abs(rateU0 - rateAtAnchors(unmanagedN0, hours, anchors)) < 1e-9,
+  "p=0: fixed-window unmanaged rate is finite",
+);
+assert(
+  Math.abs(rateU0 - rateU0) < 1e-9,
+  "p=0: fixed-window relief vs itself is ~0",
+);
+
+const unmanagedFull = gridNet.map((n, i) => n + cecFull[i]);
+const mixNetFull = gridNet.map((n, i) => n + mixFull[i]);
+const rateU = rateAtAnchors(unmanagedFull, hours, anchors);
+const rateM = rateAtAnchors(mixNetFull, hours, anchors);
+assert(rateU != null && rateM != null, "fixed-window rates at large fleet");
+
+assert(
+  anchors.bellyH === findAnchors(gridNet, hours).bellyH &&
+    anchors.peakH === findAnchors(gridNet, hours).peakH,
+  `fixed anchors stay on grid hours (${anchors.bellyH}→${anchors.peakH})`,
+);
+
+const ownUnmanaged = findAnchors(unmanagedFull, hours);
+const ownMix = findAnchors(mixNetFull, hours);
+const windowsDiffer =
+  ownUnmanaged != null &&
+  ownMix != null &&
+  (ownUnmanaged.peakH !== anchors.peakH ||
+    ownUnmanaged.bellyH !== anchors.bellyH ||
+    ownMix.peakH !== anchors.peakH ||
+    ownMix.bellyH !== anchors.bellyH ||
+    ownUnmanaged.peakH !== ownMix.peakH ||
+    ownUnmanaged.hours !== ownMix.hours);
+assert(
+  windowsDiffer,
+  "at large fleet, series-own belly/peak can differ from grid (why fixed window matters)",
+);
+
+const relief = rateU - rateM;
+assert(
+  Number.isFinite(relief),
+  `fixed-window relief at 50% mix / full LDV = ${relief.toFixed(1)} MW/h`,
+);
+
+// --- Signed incremental conserves daily energy (no max(0) floor) ---
+const mixN0 = mixEvLoads(cec, redistributeToLowestNet(sum(cec), unmanagedN0), 0.5);
+const signedInc = mixFull.map((v, i) => v - mixN0[i]);
+assert(
+  Math.abs(sum(signedInc) - (sum(mixFull) - sum(mixN0))) < 1e-6,
+  "signed incremental Σ = E(N) − E(N0) at p=0.5",
+);
+assert(
+  Math.abs(sum(signedInc) - (sum(cecFull) - sum(cec))) < 1e-6,
+  "signed incremental Σ = scale energy growth (mix conserves E)",
 );
 
 if (failed) {

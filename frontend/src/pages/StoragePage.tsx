@@ -60,7 +60,7 @@ export default function StoragePage() {
     <DeepDiveShell
       title="Storage"
       lede="Estimate battery power and energy that would flatten this day’s midday net-load belly and evening climb over a fixed daytime window. Cards show power, usable energy, and implied duration."
-      honesty="Back-of-envelope only (C8 · Weak). Not interconnection, RA, or a procurement study. Round-trip efficiency assumed at 0.9."
+      honesty="Back-of-envelope only (Weak / illustrative). Not interconnection, resource adequacy, or a procurement study. Round-trip efficiency assumed at 0.9."
       days={days}
       date={state.date}
       onDateChange={setDate}

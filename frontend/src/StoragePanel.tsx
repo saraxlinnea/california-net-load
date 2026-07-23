@@ -1,7 +1,6 @@
 import { useMemo } from "react";
-import Plot from "react-plotly.js";
+import AnimatedPlot from "./AnimatedPlot";
 import type { Data, Layout } from "plotly.js";
-import { PLOTLY_CONFIG } from "./plotlyConfig";
 import { PLOTLY_MUTED, basePlotlyLayout } from "./chartConfig";
 import {
   estimateStorageToFlatten,
@@ -115,30 +114,34 @@ export default function StoragePanel({ rows, date }: Props) {
           <p className="cost-sublabel">Power</p>
           <p className="cost-big">
             {formatGw(est.powerMw)}
-            <span>nameplate MW</span>
+            <span>full-output MW</span>
           </p>
           <p>max |net − target| in window</p>
         </div>
         <div className="storage-card">
-          <p className="cost-sublabel">Energy</p>
+          <p className="cost-sublabel">Energy (lossless shift)</p>
           <p className="cost-big">
-            {formatGwh(est.nameplateEnergyMwh)}
-            <span>@ {Math.round(est.roundTripEfficiency * 100)}% RTE</span>
+            {formatGwh(est.usableEnergyMwh)}
+            <span>max(charge, discharge)</span>
           </p>
           <p>
-            usable {formatGwh(est.usableEnergyMwh)} (max of charge{" "}
-            {formatGwh(est.chargeMwh)} / discharge {formatGwh(est.dischargeMwh)})
+            Charge {formatGwh(est.chargeMwh)} / discharge{" "}
+            {formatGwh(est.dischargeMwh)}. Bars below are this lossless path.
+            Nameplate uplift {formatGwh(est.nameplateEnergyMwh)} at{" "}
+            {Math.round(est.roundTripEfficiency * 100)}% RTE is separate (not
+            applied to bars).
           </p>
         </div>
         <div className="storage-card">
           <p className="cost-sublabel">Duration</p>
           <p className="cost-big">
             {est.durationHours.toFixed(1)} h
-            <span>energy ÷ power</span>
+            <span>lossless E ÷ power</span>
           </p>
           <p>
-            Target {formatGw(est.targetMw)} · belly {formatGw(est.bellyMw)} ·
-            peak {formatGw(est.peakMw)}
+            Nameplate duration {est.nameplateDurationHours.toFixed(1)} h if
+            using E/η. Target {formatGw(est.targetMw)} · belly{" "}
+            {formatGw(est.bellyMw)} · peak {formatGw(est.peakMw)}
             {est.rampMwPerHour != null && (
               <>
                 {" "}
@@ -151,23 +154,21 @@ export default function StoragePanel({ rows, date }: Props) {
 
       {chart && (
         <section className="chart-panel storage-chart" aria-label="Flatten path">
-          <Plot
+          <AnimatedPlot
             data={chart.data}
-            layout={{ ...chart.layout, autosize: true }}
-            config={PLOTLY_CONFIG}
+            layout={chart.layout}
             style={{ width: "100%", height: "420px" }}
-            useResizeHandler
           />
           <div className="chart-copy">
             <p className="chart-narrative">
               How to read this: the red line is CAISO net load. The dashed line
-              is the mean net load in the 9 a.m. to 9 p.m. window (flatten
-              target). Green bars are illustrative charge MW in the belly; amber
-              bars are discharge MW on the evening climb. Cards above use the
-              same arithmetic.
+              is the mean net load in the 9 a.m. through 9 p.m. window (flatten
+              target). Green bars are lossless charge MW in the belly; amber
+              bars are lossless discharge MW on the evening climb. Cards above
+              use the same arithmetic; η=90% nameplate is an uplift only.
             </p>
             <p className="chart-sources">
-              C8 · Weak · illustrative. {STORAGE_ASSUMPTIONS}
+              Illustrative. {STORAGE_ASSUMPTIONS}
             </p>
           </div>
         </section>

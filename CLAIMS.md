@@ -25,7 +25,7 @@ Strength scale (Strong → Speculative), AI-OS-style:
 | **C3** | \(N_{\text{LDV}} = 29{,}657{,}259\) as of 2025-12-31 | **Strong** | CEC workbook sum; `BENCHMARKS.md`; `provenance.ts` |
 | **C4** | Today’s plug-in share ≈ \(N_0 / N_{\text{LDV}}\) (~6.7%) | **Moderate** | AFDC \(N_0\) vs CEC LDV stock years differ; `BENCHMARKS.md` |
 | **C5** | PG&E EV schedule cost on one season day | **Moderate** | Verified TOU PDF → `tou_rates_pge.csv`; simplified bill model; `MATH.md` |
-| **C6** | Linear scale to 50%/100% LDV shows order-of-magnitude MW / % of day energy | **Weak as forecast; Strong as stress arithmetic** | `adoptionStress.ts`; `MATH.md` §3b; honesty copy on `/` |
+| **C6** | Linear scale to 50%/100% LDV (fixed CEC shape / kWh·car⁻¹) shows order-of-magnitude MW / % of day energy; not where/when/how charging changes | **Weak as forecast; Strong as stress arithmetic** | `adoptionStress.ts`; `MATH.md` §3b; honesty + fleet disclosure on `/`; Methods linear scale-up |
 | **C7** | Participation \(p\) in lowest-strain / net-load-weighted hours reduces evening ramp in this model | **Weak / Speculative** | Illustrative mix, not a real program; `MATH.md` §3b; `netLoadOptimizedEvLoads` |
 | **C8** | BESS flatten MW / MWh | **Weak** | `storageSizing.ts`; back-of-envelope; Storage page caveat |
 | **C9** | Stack CI lb/MWh | **Moderate** | Fuel mix CSV + cited EFs; import/EF caveats in `fuelTypes.ts` / `provenance.ts` |
@@ -49,13 +49,14 @@ Related (not a C-id; **not** a C6/C7/C8 upgrade): **CEC 2025 IEPR demand forecas
 
 | UI element | Claim | Label shown |
 |------------|--------|-------------|
-| Net load + EV chart (default UI) | C1 + C6/C7 stress | Strong grid; Weak as forecast / Strong as arithmetic; C7 illustrative |
+| Net load + EV chart (default UI) | C1 + C6/C7 stress | Strong grid; Weak as forecast / Strong as arithmetic; C7 illustrative. When N > N0, green = signed incremental growth (mix(N) − mix(N0); Σ = E(N) − E(N0)); at N ≤ N0, counterfactual full-fleet profile labeled not incremental MW (CAISO load already embeds some EVs) |
 | Fleet presets / today % LDV | C3, C4 | Strong / Moderate |
-| Peak EV + ramp relief key stats | C6, C7 | Stress arithmetic; Weak / Speculative for relief |
+| Peak EV + ramp relief key stats | C6, C7 | Stress arithmetic on chart series (growth peak when N > N0; counterfactual peak label when N ≤ N0); Weak / Speculative for relief |
 | Shift bridge callout | C7 and C5 as separate labeled blocks | Illustrative grid · Moderate cost · Methods |
-| Battery flatten compare (unmanaged vs mix) | C8 | Weak |
+| Battery flatten compare (unmanaged vs mix) | C8 | Weak; lossless E primary |
 | ACC II note near fleet presets | Policy context | Sales share ≠ fleet share; stress presets |
-| DC peak-share bars (today / 2040 / EV stress) | CEC Confirmed + C6 EV bar | Peak MW share, not pie / not annual energy |
+| DC vs EV peak contribution bars (2025 & 2045 levels) | CED 2025 Peak Forecast annual_peaks (132 / 8,388 EV; 96 / 4,817 DC), cross-check Item 6 slide 10 growth | Moderate-Strong forecast citation; not C6. Fleet `.chart-block`: HTML title; caption/sources under plot |
+| Item 6 gross peak-growth drivers pie | Item 6 slide 10 gross increases | Forecast citation; split layout (pie left, drivers + offsets right); not a C6 upgrade |
 | Generation donut / EV-vs-BESS / ladder | (parked) | Not in default LinkedIn UI; see `local/linkedin-wip.md` |
 
 ### `/charge` (PG&E costs)

@@ -40,14 +40,16 @@ function buildCitation(id: CitationId, n: number): Citation {
         id,
         n,
         title: PROVENANCE.grid.source,
-        detail: `Processed days: ${PROVENANCE.grid.days.join(", ")}. Peak-load benchmarks include ${PROVENANCE.grid.peak2024Mw.toLocaleString()} MW (${PROVENANCE.grid.peak2024Label}) from CAISO Peak Load History.`,
+        detail: `${PROVENANCE.grid.processingNote} In-repo: ${PROVENANCE.grid.processedGlob}. Processed days: ${PROVENANCE.grid.days.join(", ")}. Peak-load benchmarks include ${PROVENANCE.grid.peak2024Mw.toLocaleString()} MW (${PROVENANCE.grid.peak2024Label}) from CAISO Peak Load History PDF.`,
+        url: PROVENANCE.grid.peakHistoryUrl,
       };
     case "evShape":
       return {
         id,
         n,
         title: PROVENANCE.evShape.source,
-        detail: `Year ${PROVENANCE.evShape.year} shapes used for EV overlays.`,
+        detail: `Year ${PROVENANCE.evShape.year} LD shapes (5 utility regions) for EV overlays. Local extract from the CEC 2022 IEPR PEV Load Shapes Data sheet; processed files ${PROVENANCE.evShape.processedPath} and ${PROVENANCE.evShape.processedSummerWeekday}. Hub below is CEDU 2022 Load Shapes (not a direct Excel URL).`,
+        url: PROVENANCE.evShape.hubUrl,
       };
     case "afdc":
       return {
@@ -100,7 +102,7 @@ function buildCitation(id: CitationId, n: number): Citation {
         id,
         n,
         title: PROVENANCE.ieprDemandForecast.name,
-        detail: `Adopted ${PROVENANCE.ieprDemandForecast.adopted}. ${PROVENANCE.ieprDemandForecast.peakDriverFinding}. ${PROVENANCE.ieprDemandForecast.dataCenterUpwardRevisionNote} ${PROVENANCE.ieprDemandForecast.strengthLabel}. Retrieved ${PROVENANCE.ieprDemandForecast.retrievedAsOf}.`,
+        detail: `Adopted ${PROVENANCE.ieprDemandForecast.adopted}. ${PROVENANCE.ieprDemandForecast.peakDriverFinding}. UI label "${PROVENANCE.ieprDemandForecast.highScenarioPeakRiseLabel}": ${PROVENANCE.ieprDemandForecast.highScenarioPeakRiseNote}. ${PROVENANCE.ieprDemandForecast.dataCenterUpwardRevisionNote} ${PROVENANCE.ieprDemandForecast.strengthLabel}. Retrieved ${PROVENANCE.ieprDemandForecast.retrievedAsOf}.`,
         url: PROVENANCE.ieprDemandForecast.url,
       };
     case "eiaAeo2026":
@@ -118,7 +120,7 @@ function buildCitation(id: CitationId, n: number): Citation {
         id,
         n,
         title: PROVENANCE.accIi.name,
-        detail: `New light-duty ZEV sales shares: ${Math.round(PROVENANCE.accIi.salesShare2026 * 100)}% (2026), ${Math.round(PROVENANCE.accIi.salesShare2030 * 100)}% (2030), ${Math.round(PROVENANCE.accIi.salesShare2035 * 100)}% (2035). ${PROVENANCE.accIi.note} Retrieved ${PROVENANCE.accIi.retrievedAsOf}.`,
+        detail: `New light-duty ZEV sales shares: ${Math.round(PROVENANCE.accIi.salesShare2026 * 100)}% (2026), ${Math.round(PROVENANCE.accIi.salesShare2030 * 100)}% (2030), ${Math.round(PROVENANCE.accIi.salesShare2035 * 100)}% (2035). ${PROVENANCE.accIi.note} Linked source is a CARB ${PROVENANCE.accIi.urlKind}. Retrieved ${PROVENANCE.accIi.retrievedAsOf}.`,
         url: PROVENANCE.accIi.url,
       };
     case "bloomEnergyDcReport":
